@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lobby Money Tracker - Team Dashboard</title>
+  <!-- Google Fonts: Orbitron for numbers/headers, Plus Jakarta Sans for UI text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Firebase App and Realtime Database compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- Custom Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <div class="bg-glows">
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+    <div class="glow-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Navigation / Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <i data-lucide="trending-up" class="glow-icon"></i>
+        </div>
+        <div class="brand-text">
+          <h1>LOBBY<span>TRACKER</span></h1>
+          <p class="brand-subtitle">TEAM PERFORMANCE & FINANCE</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div id="dateTimeDisplay" class="datetime-display">
+          <!-- Populated by JS -->
+          <span class="date">July 12, 2026</span>
+          <span class="time-badge">04:00 PM</span>
+        </div>
+
+        <button id="adminStatusBtn" class="admin-badge-btn locked" onclick="handleAdminBadgeClick()">
+          <span class="badge-icon"><i data-lucide="lock" id="adminLockIcon"></i></span>
+          <span class="badge-text" id="adminStatusText">Viewer Mode</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- Key Statistics -->
+      <section class="stats-row">
+        <!-- Stat 1: Total Net Profit -->
+        <div class="stat-card glass-card profit-card" id="statProfitCard">
+          <div class="card-glow"></div>
+          <div class="stat-header">
+            <span class="stat-title">TOTAL NET PROFIT</span>
+            <div class="stat-icon-wrapper profit-color">
+              <i data-lucide="wallet"></i>
+            </div>
+          </div>
+          <div class="stat-value orbitron" id="totalProfit">₹0.00</div>
+          <div class="stat-footer">
+            <span class="stat-trend trend-neutral" id="profitTrend">
+              <i data-lucide="minus"></i>
+              <span id="profitTrendText">No matches logged</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Stat 2: Win Rate -->
+        <div class="stat-card glass-card winrate-card">
+          <div class="card-glow"></div>
+          <div class="stat-header">
+            <span class="stat-title">WIN RATE</span>
+            <div class="stat-icon-wrapper win-color">
+              <i data-lucide="award"></i>
+            </div>
+          </div>
+          <div class="stat-value-container">
+            <div class="stat-value orbitron" id="winRate">0%</div>
+            <div class="winrate-visual">
+              <svg class="progress-ring" width="56" height="56">
+                <circle class="progress-ring-bg" stroke="#1f293d" stroke-width="4" fill="transparent" r="24" cx="28" cy="28"/>
+                <circle class="progress-ring-fill" id="winRateRing" stroke="#00f2fe" stroke-width="4" stroke-linecap="round" fill="transparent" r="24" cx="28" cy="28" stroke-dasharray="150.79" stroke-dashoffset="150.79"/>
+              </svg>
+            </div>
+          </div>
+          <div class="stat-footer">
+            <span class="stat-subtext" id="winLossRatio">0 Wins / 0 Losses</span>
+          </div>
+        </div>
+
+        <!-- Stat 3: Total Lobbies -->
+        <div class="stat-card glass-card lobbies-card">
+          <div class="card-glow"></div>
+          <div class="stat-header">
+            <span class="stat-title">LOBBIES PLAYED</span>
+            <div class="stat-icon-wrapper neutral-color">
+              <i data-lucide="swords"></i>
+            </div>
+          </div>
+          <div class="stat-value orbitron" id="totalLobbies">0</div>
+          <div class="stat-footer">
+            <span class="stat-subtext" id="lastPlayedText">No sessions tracked yet</span>
+          </div>
+        </div>
+
+        <!-- Stat 4: Cash Flow Overview -->
+        <div class="stat-card glass-card cashflow-card">
+          <div class="card-glow"></div>
+          <div class="stat-header">
+            <span class="stat-title">VOLUME OVERVIEW</span>
+            <div class="stat-icon-wrapper spent-color">
+              <i data-lucide="arrow-left-right"></i>
+            </div>
+          </div>
+          <div class="cashflow-metrics">
+            <div class="metric-group">
+              <span class="metric-label">TOTAL EARNINGS</span>
+              <span class="metric-value won-color orbitron" id="totalEarnings">₹0.00</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-group">
+              <span class="metric-label">TOTAL BUY-INS</span>
+              <span class="metric-value lost-color orbitron" id="totalBuyins">₹0.00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chart & History Grid Section -->
+      <div class="content-split-layout">
+        
+        <!-- Interactive Chart Card -->
+        <section class="chart-section glass-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="activity" class="cyan-icon"></i>
+              <h2>Profit Trend Tracker</h2>
+            </div>
+            <div class="chart-periods">
+              <button class="period-btn active" onclick="changeChartFilter('all')">All Time</button>
+            </div>
+          </div>
+          <div class="chart-container" id="chartContainer">
+            <!-- Will render a custom dynamic SVG line chart -->
+            <svg id="trendChart" width="100%" height="100%" viewBox="0 0 600 240" preserveAspectRatio="none">
+              <!-- Placeholder helper before loading matches -->
+            </svg>
+            <div id="chartPlaceholder" class="chart-placeholder">
+              <i data-lucide="bar-chart-2"></i>
+              <p>Add matches in Admin Mode to generate the performance chart</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lobby History & Management Panel -->
+        <section class="history-section glass-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="list" class="cyan-icon"></i>
+              <h2>Lobby Registry</h2>
+            </div>
+            <div class="history-actions">
+              <!-- Admin Only Actions (hidden by default / styled differently) -->
+              <button id="addLobbyBtn" class="btn btn-primary disabled" onclick="openAddLobbyModal()" disabled>
+                <i data-lucide="plus"></i>
+                <span>Add Lobby</span>
+              </button>
+              
+              <button id="adminSettingsBtn" class="btn btn-secondary disabled" onclick="openAdminSettingsModal()" disabled>
+                <i data-lucide="settings"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters bar -->
+          <div class="history-filters">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="searchInput" placeholder="Filter by date, time..." oninput="filterLobbies()">
+            </div>
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all" onclick="setFilterTab('all')">All</button>
+              <button class="filter-tab" data-filter="win" onclick="setFilterTab('win')">Wins</button>
+              <button class="filter-tab" data-filter="loss" onclick="setFilterTab('loss')">Losses</button>
+            </div>
+          </div>
+
+          <!-- Lobby Scrollable List -->
+          <div class="lobby-list" id="lobbyList">
+            <!-- Populated by JS -->
+          </div>
+          
+          <div id="emptyListState" class="empty-list-state">
+            <i data-lucide="folder-open"></i>
+            <p>No matches registered yet.</p>
+            <span class="instruction-text admin-only-text">Unlock Admin Mode to record your team's first match.</span>
+            <button id="seedDemoBtn" class="btn btn-secondary btn-sm" onclick="seedDemoData()" style="display: none; margin-top: 0.5rem;">
+              <i data-lucide="database"></i> Load Demo Matches
+            </button>
+          </div>
+        </section>
+        
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>&copy; 2026 Lobby Money Tracker. Managed privately by Admin.</p>
+      <div class="footer-links">
+        <span id="syncStatusIndicator" class="status-indicator online"></span>
+        <span id="syncStatusText">Cloud Syncing...</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- Modal 1: Admin Unlock PIN Modal -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal-content pin-modal glass-card animate-zoom">
+      <button class="modal-close" onclick="closePinModal()"><i data-lucide="x"></i></button>
+      
+      <div class="pin-header">
+        <div class="pin-icon-glow">
+          <i data-lucide="shield-alert"></i>
+        </div>
+        <h2>Admin Authentication</h2>
+        <p>Enter your security PIN to unlock write permissions</p>
+      </div>
+
+      <div class="pin-input-area">
+        <div class="pin-dots">
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+        </div>
+        <input type="password" id="pinInputField" maxlength="4" placeholder="••••" autocomplete="off" oninput="handlePinInput(this)">
+        <p id="pinErrorMessage" class="pin-error-message"></p>
+      </div>
+
+      <div class="pin-keypad">
+        <button onclick="pressKey('1')">1</button>
+        <button onclick="pressKey('2')">2</button>
+        <button onclick="pressKey('3')">3</button>
+        <button onclick="pressKey('4')">4</button>
+        <button onclick="pressKey('5')">5</button>
+        <button onclick="pressKey('6')">6</button>
+        <button onclick="pressKey('7')">7</button>
+        <button onclick="pressKey('8')">8</button>
+        <button onclick="pressKey('9')">9</button>
+        <button onclick="pressKey('clear')" class="keypad-text">Clear</button>
+        <button onclick="pressKey('0')">0</button>
+        <button onclick="pressKey('submit')" class="keypad-text ok-key">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add/Edit Lobby Modal -->
+  <div class="modal-overlay" id="lobbyModal">
+    <div class="modal-content lobby-modal glass-card animate-zoom">
+      <button class="modal-close" onclick="closeLobbyModal()"><i data-lucide="x"></i></button>
+      
+      <div class="modal-header">
+        <h2 id="lobbyModalTitle">Register New Lobby</h2>
+        <p id="lobbyModalSubtitle">Fill in match coordinates and financial outcomes</p>
+      </div>
+
+      <form id="lobbyForm" onsubmit="saveLobby(event)">
+        <input type="hidden" id="editLobbyId">
+        
+        <div class="form-row">
+          <!-- Date -->
+          <div class="form-group flex-1">
+            <label for="lobbyDate"><i data-lucide="calendar"></i> Match Date</label>
+            <input type="date" id="lobbyDate" required>
+          </div>
+
+          <!-- Time Picker -->
+          <div class="form-group flex-1">
+            <label for="lobbyTime"><i data-lucide="clock"></i> Match Time</label>
+            <input type="text" id="lobbyTime" placeholder="e.g. 3:00 PM, 6:00 PM" required>
+            <div class="quick-times">
+              <button type="button" class="tag-btn" onclick="setQuickTime('3:00 PM')">3 PM</button>
+              <button type="button" class="tag-btn" onclick="setQuickTime('6:00 PM')">6 PM</button>
+              <button type="button" class="tag-btn" onclick="setQuickTime('9:00 PM')">9 PM</button>
+              <button type="button" class="tag-btn" onclick="setQuickTime('11:00 PM')">11 PM</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Lobby Buy-in Price -->
+          <div class="form-group flex-1">
+            <label for="lobbyPrice"><i data-lucide="indian-rupee"></i> Lobby Price (Buy-In)</label>
+            <div class="input-prefix-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="lobbyPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()" required>
+            </div>
+          </div>
+
+          <!-- Outcome Status Toggle -->
+          <div class="form-group flex-1">
+            <label><i data-lucide="check-circle-2"></i> Match Outcome</label>
+            <div class="outcome-toggle">
+              <input type="radio" name="outcome" id="outcomeWin" value="win" checked onchange="toggleOutcomeFields()">
+              <label for="outcomeWin" class="outcome-label win-select">
+                <i data-lucide="trophy"></i> Victory
+              </label>
+
+              <input type="radio" name="outcome" id="outcomeLoss" value="loss" onchange="toggleOutcomeFields()">
+              <label for="outcomeLoss" class="outcome-label loss-select">
+                <i data-lucide="skull"></i> Defeat
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic inputs depending on Won/Loss -->
+        <div class="form-row" id="financialFieldsRow">
+          <!-- Money Received/Won -->
+          <div class="form-group flex-1" id="moneyWonGroup">
+            <label for="moneyWon"><i data-lucide="trending-up"></i> Total Money Received (Payout)</label>
+            <div class="input-prefix-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="moneyWon" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()">
+            </div>
+            <span class="field-help">Gross payout. Includes entry fee return.</span>
+          </div>
+
+          <!-- Money Lost (Alternative to simple lobby price) -->
+          <div class="form-group flex-1" id="moneyLostGroup" style="display:none;">
+            <label for="moneyLost"><i data-lucide="trending-down"></i> Total Money Lost</label>
+            <div class="input-prefix-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="moneyLost" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()">
+            </div>
+            <span class="field-help">Defaults to lobby price unless additional money lost.</span>
+          </div>
+        </div>
+
+        <!-- Calculated Live Preview -->
+        <div class="form-preview-card">
+          <span class="preview-label">Estimated Net Performance:</span>
+          <span class="preview-value orbitron" id="formNetPreview">₹0.00</span>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeLobbyModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveLobbyBtnSubmit">Save Match</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Settings & Backup Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content settings-modal glass-card animate-zoom">
+      <button class="modal-close" onclick="closeAdminSettingsModal()"><i data-lucide="x"></i></button>
+      
+      <div class="modal-header">
+        <h2>Admin Management Panel</h2>
+        <p>Control global settings, manage security and database operations</p>
+      </div>
+
+      <div class="settings-sections">
+        <!-- Section 1: Security PIN Update -->
+        <div class="settings-section">
+          <h3><i data-lucide="lock"></i> Change Security PIN</h3>
+          <form id="changePinForm" onsubmit="changeAdminPin(event)" class="settings-form">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="currentPin">Current PIN</label>
+                <input type="password" id="currentPin" maxlength="4" placeholder="••••" required>
+              </div>
+              <div class="form-group flex-1">
+                <label for="newPin">New 4-Digit PIN</label>
+                <input type="password" id="newPin" maxlength="4" placeholder="••••" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Update PIN</button>
+            <p id="pinUpdateStatus" class="status-msg"></p>
+          </form>
+        </div>
+
+        <!-- Section 2: Currency Settings -->
+        <div class="settings-section">
+          <h3><i data-lucide="coins"></i> Display Currency Symbol</h3>
+          <div class="currency-settings">
+            <div class="form-group">
+              <select id="currencySelect" onchange="changeCurrency(this.value)">
+                <option value="₹" selected>INR (₹)</option>
+                <option value="$">USD ($)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+                <option value="₱">PHP (₱)</option>
+              </select>
+            </div>
+            <span class="field-help">Updates dashboard display symbols instantly.</span>
+          </div>
+        </div>
+
+        <!-- Section 2.5: Firebase Settings -->
+        <div class="settings-section">
+          <h3><i data-lucide="cloud"></i> Firebase Database Sync</h3>
+          <div class="settings-form">
+            <div class="form-group">
+              <label for="firebaseDbInput">Firebase Realtime Database URL</label>
+              <input type="text" id="firebaseDbInput" placeholder="https://your-project-id.firebaseio.com/" onchange="updateFirebaseSettings(this.value)">
+              <span class="field-help">Enter a custom Firebase Database URL to host your own records. Clear input to reset to default shared database.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Data Management (Export/Import/Clear) -->
+        <div class="settings-section">
+          <h3><i data-lucide="database"></i> Data Backup & Operations</h3>
+          <div class="backup-actions-grid">
+            <button class="btn btn-outline" onclick="exportData()">
+              <i data-lucide="download"></i> Export Data (JSON)
+            </button>
+            
+            <button class="btn btn-outline relative-upload">
+              <i data-lucide="upload"></i> Import Data
+              <input type="file" id="importFileInput" accept=".json" onchange="importData(event)">
+            </button>
+          </div>
+          <button class="btn btn-secondary" onclick="seedDemoData()" style="width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+            <i data-lucide="database"></i> Populate with Demo Data
+          </button>
+          
+          <div class="danger-zone">
+            <h4>Danger Zone</h4>
+            <p>Irreversible destructive actions. Take caution.</p>
+            <button class="btn btn-danger" onclick="clearAllData()">
+              <i data-lucide="trash-2"></i> Wipe All Lobby Records
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Javascript Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
