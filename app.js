@@ -9,7 +9,7 @@ let tempPinInput = '';
 let currentEditId = null;
 
 // Firebase Cloud Sync Configuration
-const DEFAULT_FIREBASE_DB_URL = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
+const DEFAULT_FIREBASE_DB_URL = "https://scrim-management-default-rtdb.asia-southeast1.firebasedatabase.app/";
 let firebaseApp = null;
 let dbRef = null;
 
