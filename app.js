@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════
 //  LOBBY TRACKER V3.2 — app.js
-//  Hardcore Analytics & Failover Engine
+//  Hardcore Analytics Engine
 // ═══════════════════════════════════════════════════
 
 // ── Core State ──
@@ -14,7 +14,8 @@ let state = {
   activeTab: 'dashboard'
 };
 
-// ── Firebase ──
+// ── Exact Firebase Asia-Southeast1 Database URL ──
+const DEFAULT_FIREBASE_DB_URL = "https://scrim-management-default-rtdb.asia-southeast1.firebasedatabase.app/";
 let firebaseApp = null;
 let dbRef = null;
 
@@ -65,88 +66,47 @@ function renderAll() {
 }
 
 // ═══════════════════════════════════════════════════
-//  FIREBASE & FAILOVER ENGINE
+//  FIREBASE & AUTH
 // ═══════════════════════════════════════════════════
 function initFirebase() {
-  const candidateUrls = [
-    "https://scrim-management-default-rtdb.firebaseio.com/",
-    "https://scrim-management-default-rtdb.asia-southeast1.firebasedatabase.app/",
-    "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/"
-  ];
+  const dbUrl = DEFAULT_FIREBASE_DB_URL;
+  localStorage.setItem('ltx_firebase_url', dbUrl);
 
-  let storedUrl = localStorage.getItem('ltx_firebase_url');
-  let currentIdx = 0;
-
-  if (storedUrl) {
-    const idx = candidateUrls.indexOf(storedUrl);
-    if (idx !== -1) currentIdx = idx;
-    else candidateUrls.unshift(storedUrl);
+  if ($('#firebaseDbInput')) {
+    $('#firebaseDbInput').value = dbUrl;
   }
 
-  function connectTo(urlIndex) {
-    const url = candidateUrls[urlIndex];
-    if ($('#firebaseDbInput')) {
-      $('#firebaseDbInput').value = url;
-    }
+  if (firebaseApp) { try { firebaseApp.delete(); } catch(e){} }
+  setSyncStatus('syncing', 'Connecting Cloud...');
 
-    if (firebaseApp) { try { firebaseApp.delete(); } catch(e){} }
-    setSyncStatus('syncing', 'Connecting Cloud...');
+  try {
+    firebaseApp = firebase.initializeApp({ databaseURL: dbUrl }, 'LTXV3_' + Date.now());
+    const database = firebase.database(firebaseApp);
+    dbRef = database.ref();
 
-    try {
-      firebaseApp = firebase.initializeApp({ databaseURL: url }, 'LTXV3_' + Date.now());
-      const database = firebase.database(firebaseApp);
-      dbRef = database.ref();
+    database.ref('.info/connected').on('value', snap => {
+      setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
+    });
 
-      let connTimeout = setTimeout(() => {
-        if (urlIndex + 1 < candidateUrls.length) {
-          connectTo(urlIndex + 1);
-        }
-      }, 3500);
+    dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
+    
+    dbRef.child('matches').on('value', snap => { 
+      state.matches = snap.val() || []; 
+      localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
+      renderDashboard(); 
+    });
 
-      database.ref('.info/connected').on('value', snap => {
-        if (snap.val()) {
-          clearTimeout(connTimeout);
-          setSyncStatus('online', 'Sync Active');
-          localStorage.setItem('ltx_firebase_url', url);
-        } else {
-          setSyncStatus('offline', 'Offline Mode');
-        }
-      });
+    dbRef.child('players').on('value', snap => { 
+      state.players = snap.val() || []; 
+      localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
+      renderPlayersTab();
+      renderDashboard(); 
+    });
 
-      dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
-      
-      dbRef.child('matches').on('value', snap => { 
-        const matchesData = snap.val() || []; 
-        
-        if (matchesData.length === 0 && urlIndex + 1 < candidateUrls.length && !localStorage.getItem('ltx_db_found')) {
-          connectTo(urlIndex + 1);
-          return;
-        }
-
-        if (matchesData.length > 0) localStorage.setItem('ltx_db_found', 'true');
-        state.matches = matchesData; 
-        localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
-        localStorage.setItem('ltx_firebase_url', url);
-        renderDashboard(); 
-      });
-
-      dbRef.child('players').on('value', snap => { 
-        state.players = snap.val() || []; 
-        localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
-        renderPlayersTab();
-        renderDashboard(); 
-      });
-
-    } catch(err) {
-      if (urlIndex + 1 < candidateUrls.length) {
-        connectTo(urlIndex + 1);
-      } else {
-        setSyncStatus('offline', 'Sync Offline');
-      }
-    }
+  } catch(err) {
+    console.error("Firebase Connection Error:", err);
+    setSyncStatus('offline', 'Sync Offline');
   }
-
-  connectTo(currentIdx);
 }
 
 function saveFirebaseUrl() {
