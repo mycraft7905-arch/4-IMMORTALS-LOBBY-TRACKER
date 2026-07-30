@@ -2,189 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lobby Money Tracker - Team Dashboard</title>
-  <!-- Google Fonts: Orbitron for numbers/headers, Plus Jakarta Sans for UI text -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lobby Tracker V3.2 – Hardcore Analytics</title>
+  <meta name="description" content="Hardcore Gaming Lobby & Financial Performance Tracker">
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Lucide Icons (CDN) -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Firebase App and Realtime Database compat SDKs -->
+
+  <!-- Firebase Compat Libraries -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <!-- Custom Styling -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+  <!-- Vanilla Tilt (3D Effects) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="dark-theme">
-  <div class="bg-glows">
-    <div class="glow-1"></div>
-    <div class="glow-2"></div>
-    <div class="glow-3"></div>
+<body>
+
+  <!-- Dynamic Background Mesh -->
+  <div class="mesh-bg">
+    <div class="mesh-blob blob-1"></div>
+    <div class="mesh-blob blob-2"></div>
+    <div class="mesh-blob blob-3"></div>
+    <div class="mesh-blob blob-4"></div>
+    <div class="mesh-overlay"></div>
   </div>
 
-  <div class="app-container">
-    <!-- Navigation / Header -->
+  <!-- Sync Status Floating Bar -->
+  <div class="sync-bar">
+    <span class="status-indicator offline" id="syncStatusIndicator"></span>
+    <span id="syncStatusText">Connecting...</span>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- App Loader -->
+  <div class="app-loader active" id="appLoader">
+    <div class="loader-spinner"></div>
+    <p class="orbitron" style="letter-spacing: 2px; font-size: 0.8rem;">INITIALIZING LTX V3.2...</p>
+  </div>
+
+  <!-- Main App Shell -->
+  <div class="app-shell" id="mainAppShell" style="display: none;">
+
+    <!-- Top Header -->
     <header class="app-header">
       <div class="header-brand">
         <div class="brand-icon">
-          <i data-lucide="trending-up" class="glow-icon"></i>
+          <i data-lucide="zap"></i>
         </div>
         <div class="brand-text">
-          <h1>LOBBY<span>TRACKER</span></h1>
-          <p class="brand-subtitle">TEAM PERFORMANCE & FINANCE</p>
+          <h1>LOBBY<span>TRACKER</span> <span class="brand-version">V3.2</span></h1>
+          <p class="brand-subtitle">HARDCORE ANALYTICS</p>
         </div>
       </div>
 
-      <div class="header-controls">
-        <div id="dateTimeDisplay" class="datetime-display">
-          <!-- Populated by JS -->
-          <span class="date">July 12, 2026</span>
-          <span class="time-badge">04:00 PM</span>
-        </div>
-
-        <button id="adminStatusBtn" class="admin-badge-btn locked" onclick="handleAdminBadgeClick()">
-          <span class="badge-icon"><i data-lucide="lock" id="adminLockIcon"></i></span>
-          <span class="badge-text" id="adminStatusText">Viewer Mode</span>
+      <div class="header-right">
+        <div class="time-badge">--:--</div>
+        <button id="adminStatusBtn" class="admin-badge-btn" onclick="handleAdminBadgeClick()">
+          <i data-lucide="lock" id="adminLockIcon"></i>
+          <span id="adminStatusText">Viewer</span>
         </button>
       </div>
     </header>
 
-    <!-- Main Dashboard Grid -->
-    <main class="dashboard-grid">
-      
-      <!-- Key Statistics -->
-      <section class="stats-row">
-        <!-- Stat 1: Total Net Profit -->
-        <div class="stat-card glass-card profit-card" id="statProfitCard">
-          <div class="card-glow"></div>
-          <div class="stat-header">
-            <span class="stat-title">TOTAL NET PROFIT</span>
-            <div class="stat-icon-wrapper profit-color">
-              <i data-lucide="wallet"></i>
-            </div>
-          </div>
-          <div class="stat-value orbitron" id="totalProfit">₹0.00</div>
-          <div class="stat-footer">
-            <span class="stat-trend trend-neutral" id="profitTrend">
-              <i data-lucide="minus"></i>
-              <span id="profitTrendText">No matches logged</span>
-            </span>
-          </div>
-        </div>
+    <!-- Content Panels -->
+    <main class="tab-panels">
 
-        <!-- Stat 2: Win Rate -->
-        <div class="stat-card glass-card winrate-card">
-          <div class="card-glow"></div>
-          <div class="stat-header">
-            <span class="stat-title">WIN RATE</span>
-            <div class="stat-icon-wrapper win-color">
-              <i data-lucide="award"></i>
-            </div>
-          </div>
-          <div class="stat-value-container">
-            <div class="stat-value orbitron" id="winRate">0%</div>
-            <div class="winrate-visual">
-              <svg class="progress-ring" width="56" height="56">
-                <circle class="progress-ring-bg" stroke="#1f293d" stroke-width="4" fill="transparent" r="24" cx="28" cy="28"/>
-                <circle class="progress-ring-fill" id="winRateRing" stroke="#00f2fe" stroke-width="4" stroke-linecap="round" fill="transparent" r="24" cx="28" cy="28" stroke-dasharray="150.79" stroke-dashoffset="150.79"/>
-              </svg>
-            </div>
-          </div>
-          <div class="stat-footer">
-            <span class="stat-subtext" id="winLossRatio">0 Wins / 0 Losses</span>
-          </div>
-        </div>
-
-        <!-- Stat 3: Total Lobbies -->
-        <div class="stat-card glass-card lobbies-card">
-          <div class="card-glow"></div>
-          <div class="stat-header">
-            <span class="stat-title">LOBBIES PLAYED</span>
-            <div class="stat-icon-wrapper neutral-color">
-              <i data-lucide="swords"></i>
-            </div>
-          </div>
-          <div class="stat-value orbitron" id="totalLobbies">0</div>
-          <div class="stat-footer">
-            <span class="stat-subtext" id="lastPlayedText">No sessions tracked yet</span>
-          </div>
-        </div>
-
-        <!-- Stat 4: Cash Flow Overview -->
-        <div class="stat-card glass-card cashflow-card">
-          <div class="card-glow"></div>
-          <div class="stat-header">
-            <span class="stat-title">VOLUME OVERVIEW</span>
-            <div class="stat-icon-wrapper spent-color">
-              <i data-lucide="arrow-left-right"></i>
-            </div>
-          </div>
-          <div class="cashflow-metrics">
-            <div class="metric-group">
-              <span class="metric-label">TOTAL EARNINGS</span>
-              <span class="metric-value won-color orbitron" id="totalEarnings">₹0.00</span>
-            </div>
-            <div class="metric-divider"></div>
-            <div class="metric-group">
-              <span class="metric-label">TOTAL BUY-INS</span>
-              <span class="metric-value lost-color orbitron" id="totalBuyins">₹0.00</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Chart & History Grid Section -->
-      <div class="content-split-layout">
+      <!-- ══════════ TAB 1: DASHBOARD (HQ) ══════════ -->
+      <section class="tab-panel active" id="panelDashboard">
         
-        <!-- Interactive Chart Card -->
-        <section class="chart-section glass-card">
+        <!-- Overall Stats Grid -->
+        <div class="stats-row">
+          <!-- Net Profit -->
+          <div class="stat-card glass-card" data-tilt>
+            <div class="stat-header">
+              <span class="stat-title">TEAM NET PROFIT</span>
+              <div class="stat-icon-wrapper profit-color"><i data-lucide="wallet"></i></div>
+            </div>
+            <div class="stat-value orbitron" id="totalProfit">₹0.00</div>
+            <div class="stat-footer">
+              <span class="stat-subtext">Lifetime Balance</span>
+            </div>
+          </div>
+
+          <!-- Win Rate -->
+          <div class="stat-card glass-card" data-tilt>
+            <div class="stat-header">
+              <span class="stat-title">TEAM WIN RATE</span>
+              <div class="stat-icon-wrapper win-color"><i data-lucide="trophy"></i></div>
+            </div>
+            <div class="stat-value-container">
+              <div class="stat-value orbitron" id="winRate">0%</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-subtext" id="winLossRatio">0W / 0L</span>
+            </div>
+          </div>
+
+          <!-- Matches Played -->
+          <div class="stat-card glass-card" data-tilt>
+            <div class="stat-header">
+              <span class="stat-title">TOTAL MATCHES</span>
+              <div class="stat-icon-wrapper neutral-color"><i data-lucide="swords"></i></div>
+            </div>
+            <div class="stat-value orbitron" id="totalLobbies">0</div>
+            <div class="stat-footer">
+              <span class="stat-subtext">Logged Lobbies</span>
+            </div>
+          </div>
+
+          <!-- Buyins / Earnings -->
+          <div class="stat-card glass-card" data-tilt>
+            <div class="stat-header">
+              <span class="stat-title">VOLUME</span>
+              <div class="stat-icon-wrapper spent-color"><i data-lucide="arrow-left-right"></i></div>
+            </div>
+            <div class="cashflow-metrics">
+              <div class="metric-group">
+                <span class="metric-label">EARNED</span>
+                <span class="metric-value won-color orbitron" id="totalEarnings">₹0.00</span>
+              </div>
+              <div class="metric-divider"></div>
+              <div class="metric-group">
+                <span class="metric-label">ENTRY FEES</span>
+                <span class="metric-value lost-color orbitron" id="totalBuyins">₹0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit Trend Chart -->
+        <section class="glass-card chart-section">
           <div class="card-header">
             <div class="card-header-title">
-              <i data-lucide="activity" class="cyan-icon"></i>
-              <h2>Profit Trend Tracker</h2>
-            </div>
-            <div class="chart-periods">
-              <button class="period-btn active" onclick="changeChartFilter('all')">All Time</button>
+              <i data-lucide="trending-up" style="color: var(--cyan)"></i>
+              <h2>Profit Trajectory</h2>
             </div>
           </div>
-          <div class="chart-container" id="chartContainer">
-            <!-- Will render a custom dynamic SVG line chart -->
-            <svg id="trendChart" width="100%" height="100%" viewBox="0 0 600 240" preserveAspectRatio="none">
-              <!-- Placeholder helper before loading matches -->
-            </svg>
-            <div id="chartPlaceholder" class="chart-placeholder">
-              <i data-lucide="bar-chart-2"></i>
-              <p>Add matches in Admin Mode to generate the performance chart</p>
+          <div class="chart-container">
+            <svg id="trendChart" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+            <div class="chart-placeholder" id="chartPlaceholder">
+              <i data-lucide="line-chart"></i>
+              <p>Log 2 or more lobbies to view trajectory graph</p>
             </div>
           </div>
         </section>
 
-        <!-- Lobby History & Management Panel -->
-        <section class="history-section glass-card">
+        <!-- Match Registry -->
+        <section class="glass-card history-section">
           <div class="card-header">
             <div class="card-header-title">
-              <i data-lucide="list" class="cyan-icon"></i>
-              <h2>Lobby Registry</h2>
+              <i data-lucide="history" style="color: var(--cyan)"></i>
+              <h2>Match History</h2>
             </div>
-            <div class="history-actions">
-              <!-- Admin Only Actions (hidden by default / styled differently) -->
-              <button id="addLobbyBtn" class="btn btn-primary disabled" onclick="openAddLobbyModal()" disabled>
-                <i data-lucide="plus"></i>
-                <span>Add Lobby</span>
-              </button>
-              
-              <button id="adminSettingsBtn" class="btn btn-secondary disabled" onclick="openAdminSettingsModal()" disabled>
-                <i data-lucide="settings"></i>
-              </button>
-            </div>
+            <button class="btn btn-primary btn-sm disabled" id="addLobbyBtn" onclick="openAddLobbyModal()">
+              <i data-lucide="plus"></i> Log Match
+            </button>
           </div>
 
-          <!-- Filters bar -->
           <div class="history-filters">
             <div class="search-box">
               <i data-lucide="search"></i>
-              <input type="text" id="searchInput" placeholder="Filter by date, time..." oninput="filterLobbies()">
+              <input type="text" id="searchInput" placeholder="Search map, player, or date..." oninput="filterLobbies()">
             </div>
             <div class="filter-tabs">
               <button class="filter-tab active" data-filter="all" onclick="setFilterTab('all')">All</button>
@@ -193,267 +182,267 @@
             </div>
           </div>
 
-          <!-- Lobby Scrollable List -->
           <div class="lobby-list" id="lobbyList">
-            <!-- Populated by JS -->
+            <!-- Dynamic Match Cards -->
           </div>
-          
-          <div id="emptyListState" class="empty-list-state">
-            <i data-lucide="folder-open"></i>
-            <p>No matches registered yet.</p>
-            <span class="instruction-text admin-only-text">Unlock Admin Mode to record your team's first match.</span>
-            <button id="seedDemoBtn" class="btn btn-secondary btn-sm" onclick="seedDemoData()" style="display: none; margin-top: 0.5rem;">
-              <i data-lucide="database"></i> Load Demo Matches
-            </button>
+          <div class="empty-list-state" id="emptyListState">
+            <i data-lucide="ghost"></i>
+            <p>No matches match filter</p>
           </div>
         </section>
-        
-      </div>
+      </section>
+
+      <!-- ══════════ TAB 2: ROSTER & PLAYERS ══════════ -->
+      <section class="tab-panel" id="panelPlayers">
+        <section class="glass-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="users" style="color: var(--cyan)"></i>
+              <h2>Operator Roster</h2>
+            </div>
+            <span class="brand-version" id="playerCountBadge">0 Operators</span>
+          </div>
+
+          <!-- Add Player Form -->
+          <div class="add-player-form">
+            <div class="form-row" style="margin-bottom:0.5rem;">
+              <div class="form-group flex-1">
+                <input type="text" id="newPlayerName" placeholder="Operator Call-Sign (Name)">
+              </div>
+              <div class="form-group" style="width: auto;">
+                <label style="margin-bottom:2px; font-size:0.65rem;">Theme</label>
+                <div class="color-picker-wrapper" style="display:flex; align-items:center; gap:0.5rem;">
+                  <input type="color" id="newPlayerColor" value="#00f2fe" style="width:40px; height:40px; border-radius:8px; border:none; cursor:pointer; background:none;">
+                  <span id="colorPreviewSpan" style="width:16px; height:16px; border-radius:50%; background:#00f2fe;"></span>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm add-player-btn disabled" id="addPlayerBtn" onclick="addPlayer()">
+              <i data-lucide="user-plus"></i> Recruit Operator
+            </button>
+          </div>
+
+          <div class="players-grid" id="playersList">
+            <!-- Dynamic Player Cards -->
+          </div>
+          <div class="empty-list-state" id="emptyPlayersState">
+            <i data-lucide="user-x"></i>
+            <p>No operators registered in roster</p>
+          </div>
+        </section>
+      </section>
+
     </main>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <p>&copy; 2026 Lobby Money Tracker. Managed privately by Admin.</p>
-      <div class="footer-links">
-        <span id="syncStatusIndicator" class="status-indicator online"></span>
-        <span id="syncStatusText">Cloud Syncing...</span>
-      </div>
-    </footer>
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="bottom-nav-btn active" id="bnDashboard" onclick="switchTab('dashboard')">
+        <i data-lucide="layout-dashboard"></i>
+        <span>HQ</span>
+      </button>
+      <button class="bottom-nav-btn" id="bnPlayers" onclick="switchTab('players')">
+        <i data-lucide="users"></i>
+        <span>Roster</span>
+      </button>
+    </nav>
   </div>
 
-  <!-- ================= MODALS & OVERLAYS ================= -->
+  <!-- ══════════ MODALS ══════════ -->
 
-  <!-- Modal 1: Admin Unlock PIN Modal -->
+  <!-- Admin Auth (PIN) -->
   <div class="modal-overlay" id="pinModal">
-    <div class="modal-content pin-modal glass-card animate-zoom">
+    <div class="modal-sheet pin-modal glass-card">
+      <div class="modal-handle"></div>
       <button class="modal-close" onclick="closePinModal()"><i data-lucide="x"></i></button>
-      
+
       <div class="pin-header">
-        <div class="pin-icon-glow">
-          <i data-lucide="shield-alert"></i>
-        </div>
-        <h2>Admin Authentication</h2>
-        <p>Enter your security PIN to unlock write permissions</p>
+        <div class="pin-icon-glow"><i data-lucide="shield-alert"></i></div>
+        <h2 id="pinModalTitle">Passcode Unlock</h2>
+        <p>Enter 4-digit PIN</p>
       </div>
 
       <div class="pin-input-area">
         <div class="pin-dots">
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
+          <div class="pin-dot"></div><div class="pin-dot"></div>
+          <div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
-        <input type="password" id="pinInputField" maxlength="4" placeholder="••••" autocomplete="off" oninput="handlePinInput(this)">
+        <input type="password" id="pinInputField" maxlength="4" autocomplete="off" oninput="handlePinInput(this)" inputmode="numeric">
         <p id="pinErrorMessage" class="pin-error-message"></p>
       </div>
 
       <div class="pin-keypad">
-        <button onclick="pressKey('1')">1</button>
-        <button onclick="pressKey('2')">2</button>
-        <button onclick="pressKey('3')">3</button>
-        <button onclick="pressKey('4')">4</button>
-        <button onclick="pressKey('5')">5</button>
-        <button onclick="pressKey('6')">6</button>
-        <button onclick="pressKey('7')">7</button>
-        <button onclick="pressKey('8')">8</button>
-        <button onclick="pressKey('9')">9</button>
+        <button onclick="pressKey('1')">1</button><button onclick="pressKey('2')">2</button><button onclick="pressKey('3')">3</button>
+        <button onclick="pressKey('4')">4</button><button onclick="pressKey('5')">5</button><button onclick="pressKey('6')">6</button>
+        <button onclick="pressKey('7')">7</button><button onclick="pressKey('8')">8</button><button onclick="pressKey('9')">9</button>
         <button onclick="pressKey('clear')" class="keypad-text">Clear</button>
         <button onclick="pressKey('0')">0</button>
-        <button onclick="pressKey('submit')" class="keypad-text ok-key">OK</button>
+        <button onclick="pressKey('submit')" class="keypad-text ok-key">AUTH</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 2: Add/Edit Lobby Modal -->
+  <!-- Log / Edit Match Modal -->
   <div class="modal-overlay" id="lobbyModal">
-    <div class="modal-content lobby-modal glass-card animate-zoom">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
       <button class="modal-close" onclick="closeLobbyModal()"><i data-lucide="x"></i></button>
       
       <div class="modal-header">
-        <h2 id="lobbyModalTitle">Register New Lobby</h2>
-        <p id="lobbyModalSubtitle">Fill in match coordinates and financial outcomes</p>
+        <h2 id="lobbyModalTitle">Log Match</h2>
       </div>
 
       <form id="lobbyForm" onsubmit="saveLobby(event)">
-        <input type="hidden" id="editLobbyId">
-        
+        <input type="hidden" id="editingMatchId" value="">
         <div class="form-row">
-          <!-- Date -->
           <div class="form-group flex-1">
-            <label for="lobbyDate"><i data-lucide="calendar"></i> Match Date</label>
+            <label for="lobbyDate"><i data-lucide="calendar"></i> Date</label>
             <input type="date" id="lobbyDate" required>
           </div>
-
-          <!-- Time Picker -->
           <div class="form-group flex-1">
-            <label for="lobbyTime"><i data-lucide="clock"></i> Match Time</label>
-            <input type="text" id="lobbyTime" placeholder="e.g. 3:00 PM, 6:00 PM" required>
-            <div class="quick-times">
-              <button type="button" class="tag-btn" onclick="setQuickTime('3:00 PM')">3 PM</button>
-              <button type="button" class="tag-btn" onclick="setQuickTime('6:00 PM')">6 PM</button>
-              <button type="button" class="tag-btn" onclick="setQuickTime('9:00 PM')">9 PM</button>
-              <button type="button" class="tag-btn" onclick="setQuickTime('11:00 PM')">11 PM</button>
-            </div>
+            <label for="lobbyTime"><i data-lucide="clock"></i> Time</label>
+            <input type="text" id="lobbyTime" value="12:00 PM" placeholder="e.g. 10:30 PM" required>
           </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="lobbyMap"><i data-lucide="map-pin"></i> Map / Mode</label>
+          <input type="text" id="lobbyMap" placeholder="e.g. Ascent, Dust2, Ranked">
+        </div>
+
+        <!-- Lineup Selector -->
+        <div class="form-group mb-3">
+          <label><i data-lucide="users"></i> Match Lineup</label>
+          <div class="lineup-selector" id="lineupSelector">
+            <p class="hint-text">No players in roster.</p>
+          </div>
+        </div>
+
+        <!-- Mistakes & Manual Distribution -->
+        <div class="form-group mb-3" id="mistakesContainer" style="display: none;">
+          <label><i data-lucide="alert-circle"></i> Notes & Individual Net Profit</label>
+          <div id="mistakesList" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
         </div>
 
         <div class="form-row">
-          <!-- Lobby Buy-in Price -->
           <div class="form-group flex-1">
-            <label for="lobbyPrice"><i data-lucide="indian-rupee"></i> Lobby Price (Buy-In)</label>
+            <label for="lobbyPrice"><i data-lucide="indian-rupee"></i> Buy-In / Entry</label>
             <div class="input-prefix-wrapper">
               <span class="currency-symbol">₹</span>
-              <input type="number" id="lobbyPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()" required>
-            </div>
-          </div>
-
-          <!-- Outcome Status Toggle -->
-          <div class="form-group flex-1">
-            <label><i data-lucide="check-circle-2"></i> Match Outcome</label>
-            <div class="outcome-toggle">
-              <input type="radio" name="outcome" id="outcomeWin" value="win" checked onchange="toggleOutcomeFields()">
-              <label for="outcomeWin" class="outcome-label win-select">
-                <i data-lucide="trophy"></i> Victory
-              </label>
-
-              <input type="radio" name="outcome" id="outcomeLoss" value="loss" onchange="toggleOutcomeFields()">
-              <label for="outcomeLoss" class="outcome-label loss-select">
-                <i data-lucide="skull"></i> Defeat
-              </label>
+              <input type="number" id="lobbyPrice" step="0.01" value="50" placeholder="0.00" oninput="calculateNetForm()" required>
             </div>
           </div>
         </div>
 
-        <!-- Dynamic inputs depending on Won/Loss -->
-        <div class="form-row" id="financialFieldsRow">
-          <!-- Money Received/Won -->
-          <div class="form-group flex-1" id="moneyWonGroup">
-            <label for="moneyWon"><i data-lucide="trending-up"></i> Total Money Received (Payout)</label>
-            <div class="input-prefix-wrapper">
-              <span class="currency-symbol">₹</span>
-              <input type="number" id="moneyWon" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()">
-            </div>
-            <span class="field-help">Gross payout. Includes entry fee return.</span>
-          </div>
+        <div class="form-group mb-3">
+          <label><i data-lucide="award"></i> Match Outcome</label>
+          <div class="outcome-toggle">
+            <input type="radio" id="outcomeWin" name="outcome" value="win" checked onchange="toggleOutcomeFields(); calculateNetForm();">
+            <label for="outcomeWin" class="outcome-label win-label"><i data-lucide="trophy"></i> VICTORY</label>
 
-          <!-- Money Lost (Alternative to simple lobby price) -->
-          <div class="form-group flex-1" id="moneyLostGroup" style="display:none;">
-            <label for="moneyLost"><i data-lucide="trending-down"></i> Total Money Lost</label>
-            <div class="input-prefix-wrapper">
-              <span class="currency-symbol">₹</span>
-              <input type="number" id="moneyLost" min="0" step="0.01" placeholder="0.00" oninput="calculateNetForm()">
-            </div>
-            <span class="field-help">Defaults to lobby price unless additional money lost.</span>
+            <input type="radio" id="outcomeLoss" name="outcome" value="loss" onchange="toggleOutcomeFields(); calculateNetForm();">
+            <label for="outcomeLoss" class="outcome-label loss-label"><i data-lucide="skull"></i> DEFEAT</label>
           </div>
         </div>
 
-        <!-- Calculated Live Preview -->
+        <div class="form-group mb-3" id="moneyWonGroup">
+          <label for="moneyWon"><i data-lucide="trending-up"></i> Total Return / Won Amount</label>
+          <div class="input-prefix-wrapper">
+            <span class="currency-symbol">₹</span>
+            <input type="number" id="moneyWon" step="0.01" placeholder="100.00" oninput="calculateNetForm()">
+          </div>
+        </div>
+
+        <div class="form-group mb-3" id="moneyLostGroup" style="display: none;">
+          <label for="moneyLost"><i data-lucide="trending-down"></i> Total Loss Amount</label>
+          <div class="input-prefix-wrapper">
+            <span class="currency-symbol">₹</span>
+            <input type="number" id="moneyLost" step="0.01" placeholder="50.00" oninput="calculateNetForm()">
+          </div>
+        </div>
+
         <div class="form-preview-card">
-          <span class="preview-label">Estimated Net Performance:</span>
+          <span class="preview-label">Calculated Net Match Profit:</span>
           <span class="preview-value orbitron" id="formNetPreview">₹0.00</span>
         </div>
 
-        <!-- Form Actions -->
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" onclick="closeLobbyModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="saveLobbyBtnSubmit">Save Match</button>
-        </div>
+        <button type="submit" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Commit Match</button>
       </form>
     </div>
   </div>
 
-  <!-- Modal 3: Settings & Backup Modal -->
+  <!-- Player Profile Modal -->
+  <div class="modal-overlay" id="playerProfileModal">
+    <div class="modal-sheet glass-card profile-modal">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closePlayerProfileModal()"><i data-lucide="x"></i></button>
+
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">OP</div>
+        <h2 id="profileName">Operator</h2>
+      </div>
+
+      <div class="profile-stats-grid">
+        <div class="stat-card glass-card">
+          <span class="stat-title">WIN RATE</span>
+          <span class="stat-value orbitron" id="profileWinRate">0%</span>
+          <span class="stat-subtext" id="profileWL">0W / 0L</span>
+        </div>
+        <div class="stat-card glass-card">
+          <span class="stat-title">NET PROFIT</span>
+          <span class="stat-value orbitron" id="profileProfit">₹0.00</span>
+          <span class="stat-subtext" id="profileMatches">0 Matches</span>
+        </div>
+      </div>
+
+      <div id="profileAdminActions"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
   <div class="modal-overlay" id="settingsModal">
-    <div class="modal-content settings-modal glass-card animate-zoom">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
       <button class="modal-close" onclick="closeAdminSettingsModal()"><i data-lucide="x"></i></button>
-      
       <div class="modal-header">
-        <h2>Admin Management Panel</h2>
-        <p>Control global settings, manage security and database operations</p>
+        <h2>Admin Settings</h2>
       </div>
 
       <div class="settings-sections">
-        <!-- Section 1: Security PIN Update -->
         <div class="settings-section">
-          <h3><i data-lucide="lock"></i> Change Security PIN</h3>
+          <h3><i data-lucide="lock"></i> Update Passcode</h3>
           <form id="changePinForm" onsubmit="changeAdminPin(event)" class="settings-form">
             <div class="form-row">
               <div class="form-group flex-1">
-                <label for="currentPin">Current PIN</label>
-                <input type="password" id="currentPin" maxlength="4" placeholder="••••" required>
+                <input type="password" id="currentPin" maxlength="4" placeholder="Current PIN" required inputmode="numeric">
               </div>
               <div class="form-group flex-1">
-                <label for="newPin">New 4-Digit PIN</label>
-                <input type="password" id="newPin" maxlength="4" placeholder="••••" required>
+                <input type="password" id="newPin" maxlength="4" placeholder="New PIN" required inputmode="numeric">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Update PIN</button>
-            <p id="pinUpdateStatus" class="status-msg"></p>
+            <button type="submit" class="btn btn-primary btn-sm w-full">Commit Changes</button>
+            <p id="pinUpdateStatus" class="status-msg" style="color:var(--cyan);font-size:0.8rem;margin-top:0.5rem;text-align:center;"></p>
           </form>
-        </div>
-
-        <!-- Section 2: Currency Settings -->
-        <div class="settings-section">
-          <h3><i data-lucide="coins"></i> Display Currency Symbol</h3>
-          <div class="currency-settings">
-            <div class="form-group">
-              <select id="currencySelect" onchange="changeCurrency(this.value)">
-                <option value="₹" selected>INR (₹)</option>
-                <option value="$">USD ($)</option>
-                <option value="€">EUR (€)</option>
-                <option value="£">GBP (£)</option>
-                <option value="₱">PHP (₱)</option>
-              </select>
-            </div>
-            <span class="field-help">Updates dashboard display symbols instantly.</span>
-          </div>
-        </div>
-
-        <!-- Section 2.5: Firebase Settings -->
-        <div class="settings-section">
-          <h3><i data-lucide="cloud"></i> Firebase Database Sync</h3>
-          <div class="settings-form">
-            <div class="form-group">
-              <label for="firebaseDbInput">Firebase Realtime Database URL</label>
-              <input type="text" id="firebaseDbInput" placeholder="https://your-project-id.firebaseio.com/" onchange="updateFirebaseSettings(this.value)">
-              <span class="field-help">Enter a custom Firebase Database URL to host your own records. Clear input to reset to default shared database.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 3: Data Management (Export/Import/Clear) -->
-        <div class="settings-section">
-          <h3><i data-lucide="database"></i> Data Backup & Operations</h3>
-          <div class="backup-actions-grid">
-            <button class="btn btn-outline" onclick="exportData()">
-              <i data-lucide="download"></i> Export Data (JSON)
-            </button>
-            
-            <button class="btn btn-outline relative-upload">
-              <i data-lucide="upload"></i> Import Data
-              <input type="file" id="importFileInput" accept=".json" onchange="importData(event)">
-            </button>
-          </div>
-          <button class="btn btn-secondary" onclick="seedDemoData()" style="width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem;">
-            <i data-lucide="database"></i> Populate with Demo Data
+          <button class="btn btn-ghost w-full mt-3" onclick="handleAdminLogout()">
+            <i data-lucide="lock"></i> Lock App
           </button>
-          
-          <div class="danger-zone">
-            <h4>Danger Zone</h4>
-            <p>Irreversible destructive actions. Take caution.</p>
-            <button class="btn btn-danger" onclick="clearAllData()">
-              <i data-lucide="trash-2"></i> Wipe All Lobby Records
-            </button>
+        </div>
+
+        <div class="settings-section mt-3">
+          <h3><i data-lucide="database"></i> Data Backup & Export</h3>
+          <div class="form-row">
+            <button class="btn btn-ghost btn-sm flex-1" onclick="exportData()"><i data-lucide="download"></i> Export JSON</button>
           </div>
+          <button class="btn btn-danger btn-sm w-full mt-3" onclick="clearAllData()"><i data-lucide="trash-2"></i> Danger: Wipe Matches</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification System -->
-  <div id="toastContainer" class="toast-container"></div>
+  <!-- Settings Gear Button -->
+  <button id="adminSettingsBtn" class="action-btn disabled" onclick="openAdminSettingsModal()" style="position:fixed; top:0.85rem; right:120px; z-index:91; width:36px; height:36px;">
+    <i data-lucide="settings"></i>
+  </button>
 
-  <!-- Javascript Logic -->
   <script src="app.js"></script>
 </body>
 </html>
