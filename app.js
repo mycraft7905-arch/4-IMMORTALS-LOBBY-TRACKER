@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════
 //  LOBBY TRACKER V3.2 — app.js
-//  Hardcore Analytics & 24h Lock Engine
+//  Hardcore Analytics & Failover Engine
 // ═══════════════════════════════════════════════════
 
 // ── Core State ──
@@ -15,7 +15,6 @@ let state = {
 };
 
 // ── Firebase ──
-const DEFAULT_FIREBASE_DB_URL = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
 let firebaseApp = null;
 let dbRef = null;
 
@@ -66,25 +65,52 @@ function renderAll() {
 }
 
 // ═══════════════════════════════════════════════════
-//  FIREBASE & AUTH (DUAL-DB AUTO-DETECTOR)
+//  FIREBASE & FAILOVER ENGINE
 // ═══════════════════════════════════════════════════
 function initFirebase() {
-  const primaryUrl = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
-  const secondaryUrl = "https://scrim-management-default-rtdb.firebaseio.com/";
+  const candidateUrls = [
+    "https://scrim-management-default-rtdb.firebaseio.com/",
+    "https://scrim-management-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/"
+  ];
 
-  let dbUrl = localStorage.getItem('ltx_firebase_url') || primaryUrl;
+  let storedUrl = localStorage.getItem('ltx_firebase_url');
+  let currentIdx = 0;
 
-  function tryConnect(url, isFallback = false) {
+  if (storedUrl) {
+    const idx = candidateUrls.indexOf(storedUrl);
+    if (idx !== -1) currentIdx = idx;
+    else candidateUrls.unshift(storedUrl);
+  }
+
+  function connectTo(urlIndex) {
+    const url = candidateUrls[urlIndex];
+    if ($('#firebaseDbInput')) {
+      $('#firebaseDbInput').value = url;
+    }
+
     if (firebaseApp) { try { firebaseApp.delete(); } catch(e){} }
-    setSyncStatus('syncing', 'Connecting to Cloud...');
+    setSyncStatus('syncing', 'Connecting Cloud...');
 
     try {
       firebaseApp = firebase.initializeApp({ databaseURL: url }, 'LTXV3_' + Date.now());
       const database = firebase.database(firebaseApp);
       dbRef = database.ref();
 
+      let connTimeout = setTimeout(() => {
+        if (urlIndex + 1 < candidateUrls.length) {
+          connectTo(urlIndex + 1);
+        }
+      }, 3500);
+
       database.ref('.info/connected').on('value', snap => {
-        setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
+        if (snap.val()) {
+          clearTimeout(connTimeout);
+          setSyncStatus('online', 'Sync Active');
+          localStorage.setItem('ltx_firebase_url', url);
+        } else {
+          setSyncStatus('offline', 'Offline Mode');
+        }
       });
 
       dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
@@ -92,15 +118,12 @@ function initFirebase() {
       dbRef.child('matches').on('value', snap => { 
         const matchesData = snap.val() || []; 
         
-        // Auto-switch to alternate URL if 0 matches found on initial URL
-        if (matchesData.length === 0 && !isFallback && url === secondaryUrl) {
-          tryConnect(primaryUrl, true);
-          return;
-        } else if (matchesData.length === 0 && !isFallback && url === primaryUrl) {
-          tryConnect(secondaryUrl, true);
+        if (matchesData.length === 0 && urlIndex + 1 < candidateUrls.length && !localStorage.getItem('ltx_db_found')) {
+          connectTo(urlIndex + 1);
           return;
         }
 
+        if (matchesData.length > 0) localStorage.setItem('ltx_db_found', 'true');
         state.matches = matchesData; 
         localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
         localStorage.setItem('ltx_firebase_url', url);
@@ -115,15 +138,27 @@ function initFirebase() {
       });
 
     } catch(err) {
-      if (!isFallback && url === secondaryUrl) {
-        tryConnect(primaryUrl, true);
+      if (urlIndex + 1 < candidateUrls.length) {
+        connectTo(urlIndex + 1);
       } else {
         setSyncStatus('offline', 'Sync Offline');
       }
     }
   }
 
-  tryConnect(dbUrl);
+  connectTo(currentIdx);
+}
+
+function saveFirebaseUrl() {
+  if (!state.isAdmin) return;
+  const input = $('#firebaseDbInput');
+  if (!input) return;
+  let url = input.value.trim();
+  if (!url) return;
+  if (!url.endsWith('/')) url += '/';
+  localStorage.setItem('ltx_firebase_url', url);
+  showToast('Database URL updated! Reconnecting...', 'success');
+  setTimeout(() => location.reload(), 1000);
 }
 
 function setSyncStatus(status, text) {
