@@ -15,7 +15,7 @@ let state = {
 };
 
 // ── Firebase ──
-const DEFAULT_FIREBASE_DB_URL = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
+const DEFAULT_FIREBASE_DB_URL = "https://scrim-management-default-rtdb.firebaseio.com/";
 let firebaseApp = null;
 let dbRef = null;
 
@@ -73,9 +73,13 @@ function renderAll() {
 //  FIREBASE & AUTH
 // ═══════════════════════════════════════════════════
 function initFirebase() {
-  const dbUrl = localStorage.getItem('ltx_firebase_url') || DEFAULT_FIREBASE_DB_URL;
+  let dbUrl = localStorage.getItem('ltx_firebase_url');
+  if (!dbUrl || dbUrl.includes('lobby-tracker-d128d')) {
+    dbUrl = DEFAULT_FIREBASE_DB_URL;
+    localStorage.setItem('ltx_firebase_url', dbUrl);
+  }
   if ($('#firebaseDbInput')) {
-    $('#firebaseDbInput').value = localStorage.getItem('ltx_firebase_url') || '';
+    $('#firebaseDbInput').value = dbUrl;
     $('#firebaseDbInput').placeholder = DEFAULT_FIREBASE_DB_URL;
   }
 
