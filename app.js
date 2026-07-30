@@ -15,7 +15,7 @@ let state = {
 };
 
 // ── Firebase ──
-const DEFAULT_FIREBASE_DB_URL = "https://scrim-management-default-rtdb.firebaseio.com/";
+const DEFAULT_FIREBASE_DB_URL = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
 let firebaseApp = null;
 let dbRef = null;
 
@@ -29,7 +29,6 @@ const getTodayString = () => new Date().toISOString().split('T')[0];
 // ═══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    // Load local state
     state.adminPIN = localStorage.getItem('ltx_pin') || '0852';
     state.matches = JSON.parse(localStorage.getItem('ltx_matches') || '[]');
     state.players = JSON.parse(localStorage.getItem('ltx_players') || '[]');
@@ -39,14 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTime();
     setInterval(updateTime, 60000);
 
-    // Initialize 3D Tilt
     if (typeof VanillaTilt !== 'undefined') {
       VanillaTilt.init($$("[data-tilt]"), {
         max: 5, speed: 400, glare: true, "max-glare": 0.2
       });
     }
 
-    // Color picker preview
     $('#newPlayerColor')?.addEventListener('input', (e) => {
       if ($('#colorPreviewSpan')) $('#colorPreviewSpan').style.background = e.target.value;
     });
@@ -54,10 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
     initFirebase();
     
-    // Hide Loader
     setTimeout(() => {
-      $('#appLoader').classList.remove('active');
-      $('#mainAppShell').style.display = 'flex';
+      $('#appLoader')?.classList.remove('active');
+      if ($('#mainAppShell')) $('#mainAppShell').style.display = 'flex';
       lucide.createIcons();
     }, 800);
 
@@ -70,56 +66,64 @@ function renderAll() {
 }
 
 // ═══════════════════════════════════════════════════
-//  FIREBASE & AUTH
+//  FIREBASE & AUTH (DUAL-DB AUTO-DETECTOR)
 // ═══════════════════════════════════════════════════
 function initFirebase() {
-  let dbUrl = localStorage.getItem('ltx_firebase_url');
-  if (!dbUrl || dbUrl.includes('lobby-tracker-d128d')) {
-    dbUrl = DEFAULT_FIREBASE_DB_URL;
-    localStorage.setItem('ltx_firebase_url', dbUrl);
-  }
-  if ($('#firebaseDbInput')) {
-    $('#firebaseDbInput').value = dbUrl;
-    $('#firebaseDbInput').placeholder = DEFAULT_FIREBASE_DB_URL;
-  }
+  const primaryUrl = "https://lobby-tracker-d128d-default-rtdb.firebaseio.com/";
+  const secondaryUrl = "https://scrim-management-default-rtdb.firebaseio.com/";
 
-  if (firebaseApp) { try { firebaseApp.delete(); } catch(e){} }
+  let dbUrl = localStorage.getItem('ltx_firebase_url') || primaryUrl;
 
-  setSyncStatus('syncing', 'Sync Initializing');
+  function tryConnect(url, isFallback = false) {
+    if (firebaseApp) { try { firebaseApp.delete(); } catch(e){} }
+    setSyncStatus('syncing', 'Connecting to Cloud...');
 
-  try {
-    firebaseApp = firebase.initializeApp({ databaseURL: dbUrl }, 'LTXV3_' + Date.now());
-    const database = firebase.database(firebaseApp);
-    dbRef = database.ref();
-
-    database.ref('.info/connected').on('value', snap => {
-      setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
-    });
-
-    dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
-    dbRef.child('matches').on('value', snap => { 
-      state.matches = snap.val() || []; 
-      localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
-      renderDashboard(); 
-    });
-    dbRef.child('players').on('value', snap => { 
-      state.players = snap.val() || []; 
-      localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
-      renderPlayersTab();
-      renderDashboard(); 
-    });
-
-    // Auth Listener for Admin features
     try {
-      firebase.auth(firebaseApp).onAuthStateChanged((user) => {
-        state.isAdmin = user && !user.isAnonymous;
-        updateAdminUI();
-      });
-    } catch(e){}
+      firebaseApp = firebase.initializeApp({ databaseURL: url }, 'LTXV3_' + Date.now());
+      const database = firebase.database(firebaseApp);
+      dbRef = database.ref();
 
-  } catch(err) {
-    setSyncStatus('offline', 'Sync Offline');
+      database.ref('.info/connected').on('value', snap => {
+        setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
+      });
+
+      dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
+      
+      dbRef.child('matches').on('value', snap => { 
+        const matchesData = snap.val() || []; 
+        
+        // Auto-switch to alternate URL if 0 matches found on initial URL
+        if (matchesData.length === 0 && !isFallback && url === secondaryUrl) {
+          tryConnect(primaryUrl, true);
+          return;
+        } else if (matchesData.length === 0 && !isFallback && url === primaryUrl) {
+          tryConnect(secondaryUrl, true);
+          return;
+        }
+
+        state.matches = matchesData; 
+        localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
+        localStorage.setItem('ltx_firebase_url', url);
+        renderDashboard(); 
+      });
+
+      dbRef.child('players').on('value', snap => { 
+        state.players = snap.val() || []; 
+        localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
+        renderPlayersTab();
+        renderDashboard(); 
+      });
+
+    } catch(err) {
+      if (!isFallback && url === secondaryUrl) {
+        tryConnect(primaryUrl, true);
+      } else {
+        setSyncStatus('offline', 'Sync Offline');
+      }
+    }
   }
+
+  tryConnect(dbUrl);
 }
 
 function setSyncStatus(status, text) {
