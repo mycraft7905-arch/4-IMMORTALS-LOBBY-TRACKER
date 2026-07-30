@@ -85,42 +85,33 @@ function initFirebase() {
 
   try {
     firebaseApp = firebase.initializeApp({ databaseURL: dbUrl }, 'LTXV3_' + Date.now());
-    
-    firebase.auth(firebaseApp).onAuthStateChanged((user) => {
-      if (user) {
-        state.isAdmin = !user.isAnonymous;
-        updateAdminUI();
-        
-        if (!dbRef) {
-          const database = firebase.database(firebaseApp);
-          dbRef = database.ref();
+    const database = firebase.database(firebaseApp);
+    dbRef = database.ref();
 
-          database.ref('.info/connected').on('value', snap => {
-            setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
-          });
-
-          dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
-          dbRef.child('matches').on('value', snap => { 
-            state.matches = snap.val() || []; 
-            localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
-            renderDashboard(); 
-          });
-          dbRef.child('players').on('value', snap => { 
-            state.players = snap.val() || []; 
-            localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
-            renderPlayersTab();
-            renderDashboard(); 
-          });
-        }
-      } else {
-        state.isAdmin = false;
-        updateAdminUI();
-        firebase.auth(firebaseApp).signInAnonymously().catch(e => {
-          console.error("Auth Error:", e);
-          setSyncStatus('offline', 'Auth Failed');
-        });
-      }
+    database.ref('.info/connected').on('value', snap => {
+      setSyncStatus(snap.val() ? 'online' : 'offline', snap.val() ? 'Sync Active' : 'Offline Mode');
     });
+
+    dbRef.child('adminPIN').on('value', snap => { if (snap.val()) state.adminPIN = snap.val(); });
+    dbRef.child('matches').on('value', snap => { 
+      state.matches = snap.val() || []; 
+      localStorage.setItem('ltx_matches', JSON.stringify(state.matches)); 
+      renderDashboard(); 
+    });
+    dbRef.child('players').on('value', snap => { 
+      state.players = snap.val() || []; 
+      localStorage.setItem('ltx_players', JSON.stringify(state.players)); 
+      renderPlayersTab();
+      renderDashboard(); 
+    });
+
+    // Auth Listener for Admin features
+    try {
+      firebase.auth(firebaseApp).onAuthStateChanged((user) => {
+        state.isAdmin = user && !user.isAnonymous;
+        updateAdminUI();
+      });
+    } catch(e){}
 
   } catch(err) {
     setSyncStatus('offline', 'Sync Offline');
