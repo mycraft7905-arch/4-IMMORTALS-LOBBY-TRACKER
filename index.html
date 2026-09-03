@@ -74,74 +74,148 @@
     <main class="tab-panels" id="mainContent">
 
       <!-- ══════════════════════════════════════════════════
-           TAB 1: FINANCE HQ (DASHBOARD)
+           TAB 1: FINANCE HQ & MAIN DASHBOARD
            ══════════════════════════════════════════════════ -->
       <div class="tab-panel active" id="panelFinance">
 
-        <!-- Top Stat Cards (Current Week Financial Status) -->
-        <section class="stats-row">
-          <!-- Current Week Result -->
-          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
-            <div class="stat-header">
-              <span class="stat-title">THIS WEEK NET RESULT</span>
-              <div class="stat-icon-wrapper profit-color" id="weekNetIconWrap"><i data-lucide="trending-up"></i></div>
+        <!-- ════════ 1. OVERALL STANDING (HERO SECTION) ════════ -->
+        <section class="glass-card hero-standings-section">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="trophy" class="cyan-icon"></i>
+              <h2>OVERALL STANDING</h2>
             </div>
-            <div class="stat-value orbitron" id="weekNetResult">₹0.00</div>
-            <div class="stat-footer">
-              <span class="stat-subtext" id="weekNetSubtext">Mon – Sun (IST)</span>
-            </div>
+            <span class="brand-version">TEAM HERO OVERVIEW</span>
           </div>
 
-          <!-- Loss To Recover -->
-          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
-            <div class="stat-header">
-              <span class="stat-title">LOSS TO RECOVER</span>
-              <div class="stat-icon-wrapper spent-color"><i data-lucide="alert-triangle"></i></div>
-            </div>
-            <div class="stat-value orbitron lost-color" id="lossToRecoverVal">₹0.00</div>
-            <div class="stat-footer">
-              <span class="stat-subtext">Must be recovered first</span>
-            </div>
-          </div>
-
-          <!-- Current Distributable Profit -->
-          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
-            <div class="stat-header">
-              <span class="stat-title">DISTRIBUTABLE PROFIT</span>
-              <div class="stat-icon-wrapper win-color"><i data-lucide="coins"></i></div>
-            </div>
-            <div class="stat-value orbitron won-color" id="distributableProfitVal">₹0.00</div>
-            <div class="stat-footer">
-              <span class="stat-subtext" id="distributableShareText">₹0.00 / member (20%)</span>
-            </div>
-          </div>
-
-          <!-- Volume Overview -->
-          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
-            <div class="stat-header">
-              <span class="stat-title">THIS WEEK VOLUME</span>
-              <div class="stat-icon-wrapper neutral-color"><i data-lucide="arrow-left-right"></i></div>
-            </div>
-            <div class="cashflow-metrics">
-              <div class="metric-group">
-                <span class="metric-label">INCOME</span>
-                <span class="metric-value won-color orbitron" id="weekIncome">₹0.00</span>
+          <div class="standings-content-wrap">
+            <!-- Overall Stats Summary Cards -->
+            <div class="stats-row">
+              <div class="stat-card glass-card">
+                <div class="stat-header">
+                  <span class="stat-title">HISTORICAL MATCH PROFIT</span>
+                  <div class="stat-icon-wrapper profit-color"><i data-lucide="trophy"></i></div>
+                </div>
+                <div class="stat-value orbitron" id="standingsTotalProfit">₹0.00</div>
+                <div class="stat-footer">
+                  <span class="stat-subtext">Match History Balance</span>
+                </div>
               </div>
-              <div class="metric-divider"></div>
-              <div class="metric-group">
-                <span class="metric-label">EXPENSES</span>
-                <span class="metric-value lost-color orbitron" id="weekExpenses">₹0.00</span>
+
+              <div class="stat-card glass-card">
+                <div class="stat-header">
+                  <span class="stat-title">MATCH WIN RATE</span>
+                  <div class="stat-icon-wrapper win-color"><i data-lucide="crosshair"></i></div>
+                </div>
+                <div class="stat-value orbitron" id="standingsWinRate">0%</div>
+                <div class="stat-footer">
+                  <span class="stat-subtext" id="standingsWinLossRatio">0W / 0L</span>
+                </div>
+              </div>
+
+              <div class="stat-card glass-card">
+                <div class="stat-header">
+                  <span class="stat-title">LOBBIES PLAYED</span>
+                  <div class="stat-icon-wrapper neutral-color"><i data-lucide="swords"></i></div>
+                </div>
+                <div class="stat-value orbitron" id="standingsTotalLobbies">0</div>
+                <div class="stat-footer">
+                  <span class="stat-subtext">Preserved Match Records</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overall Standing Table (Member | Share | Wallet) -->
+            <div class="wallet-table-container mt-3">
+              <table class="wallet-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Share</th>
+                    <th class="text-right">Wallet Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="overallStandingTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ════════ 2. CURRENT WEEK FINANCIAL RESULT ════════ -->
+        <section class="section-container">
+          <div class="section-title-wrap mb-2">
+            <i data-lucide="calendar" class="cyan-icon"></i>
+            <h2>CURRENT WEEK FINANCIAL RESULT</h2>
+          </div>
+
+          <div class="stats-row">
+            <!-- Current Week Result -->
+            <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+              <div class="stat-header">
+                <span class="stat-title">THIS WEEK NET RESULT</span>
+                <div class="stat-icon-wrapper profit-color" id="weekNetIconWrap"><i data-lucide="trending-up"></i></div>
+              </div>
+              <div class="stat-value orbitron" id="weekNetResult">₹0.00</div>
+              <div class="stat-footer">
+                <span class="stat-subtext" id="weekNetSubtext">Mon – Sun (IST)</span>
+              </div>
+            </div>
+
+            <!-- Loss To Recover -->
+            <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+              <div class="stat-header">
+                <span class="stat-title">LOSS TO RECOVER</span>
+                <div class="stat-icon-wrapper spent-color"><i data-lucide="alert-triangle"></i></div>
+              </div>
+              <div class="stat-value orbitron lost-color" id="lossToRecoverVal">₹0.00</div>
+              <div class="stat-footer">
+                <span class="stat-subtext">Must be recovered first</span>
+              </div>
+            </div>
+
+            <!-- Current Distributable Profit -->
+            <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+              <div class="stat-header">
+                <span class="stat-title">DISTRIBUTABLE PROFIT</span>
+                <div class="stat-icon-wrapper win-color"><i data-lucide="coins"></i></div>
+              </div>
+              <div class="stat-value orbitron won-color" id="distributableProfitVal">₹0.00</div>
+              <div class="stat-footer">
+                <span class="stat-subtext" id="distributableShareText">₹0.00 / member (20%)</span>
+              </div>
+            </div>
+
+            <!-- Volume Overview -->
+            <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
+              <div class="stat-header">
+                <span class="stat-title">THIS WEEK VOLUME</span>
+                <div class="stat-icon-wrapper neutral-color"><i data-lucide="arrow-left-right"></i></div>
+              </div>
+              <div class="cashflow-metrics">
+                <div class="metric-group">
+                  <span class="metric-label">INCOME</span>
+                  <span class="metric-value won-color orbitron" id="weekIncome">₹0.00</span>
+                </div>
+                <div class="metric-divider"></div>
+                <div class="metric-group">
+                  <span class="metric-label">EXPENSES</span>
+                  <span class="metric-value lost-color orbitron" id="weekExpenses">₹0.00</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- 5-Member Team Wallet Table -->
+
+        <!-- ════════ 3. WALLET SUMMARY & PAYMENTS ════════ -->
         <section class="glass-card wallet-section">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="wallet" class="cyan-icon"></i>
-              <h2>Team Wallets & Member Shares</h2>
+              <h2>WALLET SUMMARY & PAYMENTS</h2>
             </div>
             <div class="header-action-btns">
               <button class="btn btn-ghost btn-sm disabled" id="editMembersBtn" onclick="openEditMembersModal()" disabled>
@@ -173,12 +247,13 @@
           </div>
         </section>
 
-        <!-- Weekly Performance Graph -->
+
+        <!-- ════════ 4. WEEKLY PERFORMANCE GRAPH ════════ -->
         <section class="chart-section glass-card" data-tilt data-tilt-max="1" data-tilt-perspective="1000">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="activity" class="cyan-icon"></i>
-              <h2>Weekly Financial Performance & Loss Recovery Graph</h2>
+              <h2>WEEKLY PERFORMANCE GRAPH</h2>
             </div>
           </div>
           <div class="chart-container" id="chartContainer">
@@ -190,12 +265,13 @@
           </div>
         </section>
 
-        <!-- Current Week Transactions Log -->
+
+        <!-- ════════ 5. TRANSACTION HISTORY ════════ -->
         <section class="history-section glass-card">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="file-text" class="cyan-icon"></i>
-              <h2>Current Week Transactions Log</h2>
+              <h2>TRANSACTION & FINANCIAL HISTORY</h2>
             </div>
             <div class="history-actions">
               <button id="addTxBtn" class="btn btn-primary btn-sm disabled" onclick="openAddTxModal()" disabled>
@@ -309,52 +385,16 @@
 
 
       <!-- ══════════════════════════════════════════════════
-           TAB 3: OVERALL STANDINGS & MATCHES (PRESERVED - REQUIREMENT 19)
+           TAB 3: PRESERVED MATCH REGISTRY (REQ 19)
            ══════════════════════════════════════════════════ -->
       <div class="tab-panel" id="panelStandings">
 
-        <!-- Standings Stats Summary -->
-        <section class="stats-row">
-          <div class="stat-card glass-card">
-            <div class="stat-header">
-              <span class="stat-title">HISTORICAL MATCH PROFIT</span>
-              <div class="stat-icon-wrapper profit-color"><i data-lucide="trophy"></i></div>
-            </div>
-            <div class="stat-value orbitron" id="standingsTotalProfit">₹0.00</div>
-            <div class="stat-footer">
-              <span class="stat-subtext">Match History Balance</span>
-            </div>
-          </div>
-
-          <div class="stat-card glass-card">
-            <div class="stat-header">
-              <span class="stat-title">MATCH WIN RATE</span>
-              <div class="stat-icon-wrapper win-color"><i data-lucide="crosshair"></i></div>
-            </div>
-            <div class="stat-value orbitron" id="standingsWinRate">0%</div>
-            <div class="stat-footer">
-              <span class="stat-subtext" id="standingsWinLossRatio">0W / 0L</span>
-            </div>
-          </div>
-
-          <div class="stat-card glass-card">
-            <div class="stat-header">
-              <span class="stat-title">LOBBIES PLAYED</span>
-              <div class="stat-icon-wrapper neutral-color"><i data-lucide="swords"></i></div>
-            </div>
-            <div class="stat-value orbitron" id="standingsTotalLobbies">0</div>
-            <div class="stat-footer">
-              <span class="stat-subtext">Preserved Match Records</span>
-            </div>
-          </div>
-        </section>
-
         <!-- Match Registry & Logger -->
-        <section class="history-section glass-card mt-3">
+        <section class="history-section glass-card">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="list" class="cyan-icon"></i>
-              <h2>Match Registry & Standings</h2>
+              <h2>Match Registry & Preserved Lobbies</h2>
             </div>
             <div class="history-actions">
               <button id="addLobbyBtn" class="btn btn-primary btn-sm disabled" onclick="openAddLobbyModal()" disabled>
@@ -377,17 +417,6 @@
             <i data-lucide="folder-open"></i>
             <p>No historical match records found.</p>
           </div>
-        </section>
-
-        <!-- Preserved Roster Management Section -->
-        <section class="players-manage-card glass-card mt-3">
-          <div class="card-header">
-            <div class="card-header-title">
-              <i data-lucide="users" class="cyan-icon"></i>
-              <h2>Roster Ranks & Standings</h2>
-            </div>
-          </div>
-          <div class="players-grid" id="playersList"></div>
         </section>
 
       </div><!-- /panelStandings -->
