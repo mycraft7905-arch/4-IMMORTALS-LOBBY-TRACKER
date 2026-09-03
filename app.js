@@ -339,12 +339,16 @@ function getMemberPaidAmount(memberId) {
 }
 
 // ═══════════════════════════════════════════════════
-//  TAB 1: FINANCE HQ RENDERING
+//  TAB 1: FINANCE HQ RENDERING & DASHBOARD
 // ═══════════════════════════════════════════════════
 function renderFinanceTab() {
   const stats = calculateCurrentWeekStats();
 
-  // Top Stat Cards
+  // Hero Section 1: Render Overall Standing Metrics & Table
+  renderStandingsStats();
+  renderOverallStandingTable();
+
+  // Section 2: Current Week Stat Cards
   if ($('#weekNetResult')) {
     $('#weekNetResult').textContent = `${stats.net >= 0 ? '+' : '-'}${formatMoney(stats.net)}`;
     $('#weekNetResult').className = `stat-value orbitron ${stats.net >= 0 ? 'won-color' : 'lost-color'}`;
@@ -358,14 +362,60 @@ function renderFinanceTab() {
   if ($('#weekIncome')) $('#weekIncome').textContent = formatMoney(stats.income);
   if ($('#weekExpenses')) $('#weekExpenses').textContent = formatMoney(stats.expenses);
 
-  // 5-Member Team Wallet Table
+  // Section 3: 5-Member Team Wallet Table
   renderWalletTable();
 
-  // Weekly Performance Graph
+  // Section 4: Weekly Performance Graph
   renderFinancialChart();
 
-  // Current Week Transactions List
+  // Section 5: Current Week Transactions List
   renderTransactionsList(stats.currentTxList);
+}
+
+function renderOverallStandingTable() {
+  const tbody = $('#overallStandingTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  state.members.forEach(m => {
+    const earned = state.memberWallets[m.id] || 0;
+    const inits = m.name.substring(0, 2).toUpperCase();
+
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <div class="member-cell">
+            <div class="member-avatar-chip" style="background:${m.color}">${inits}</div>
+            <div>
+              <div>${m.name}</div>
+              <div class="member-role-badge">${m.role}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="share-badge">20%</span></td>
+        <td class="text-right"><span class="wallet-val">${formatMoney(earned)}</span></td>
+      </tr>
+    `;
+  });
+  lucide.createIcons();
+}
+
+function renderStandingsStats() {
+  let net = 0, wins = 0, spent = 0, earned = 0;
+  state.matches.forEach(m => {
+    const p = parseFloat(m.price) || 0;
+    spent += p;
+    if (m.outcome === 'win') { wins++; earned += (parseFloat(m.wonAmount) || 0); net += ((parseFloat(m.wonAmount) || 0) - p); }
+    else { net -= (parseFloat(m.lostAmount) || 0); }
+  });
+
+  const total = state.matches.length;
+  const winPct = total > 0 ? Math.round((wins / total) * 100) : 0;
+
+  if ($('#standingsTotalProfit')) $('#standingsTotalProfit').textContent = `${net >= 0 ? '' : '-'}${formatMoney(net)}`;
+  if ($('#standingsWinRate')) $('#standingsWinRate').textContent = `${winPct}%`;
+  if ($('#standingsWinLossRatio')) $('#standingsWinLossRatio').textContent = `${wins}W / ${total - wins}L`;
+  if ($('#standingsTotalLobbies')) $('#standingsTotalLobbies').textContent = total;
 }
 
 function renderWalletTable() {
@@ -896,21 +946,7 @@ function renderFinancialChart() {
 //  TAB 3: PRESERVED OVERALL STANDINGS & MATCHES (REQ 19)
 // ═══════════════════════════════════════════════════
 function renderStandingsTab() {
-  let net = 0, wins = 0, spent = 0, earned = 0;
-  state.matches.forEach(m => {
-    const p = parseFloat(m.price) || 0;
-    spent += p;
-    if (m.outcome === 'win') { wins++; earned += (parseFloat(m.wonAmount) || 0); net += ((parseFloat(m.wonAmount) || 0) - p); }
-    else { net -= (parseFloat(m.lostAmount) || 0); }
-  });
-
-  const total = state.matches.length;
-  const winPct = total > 0 ? Math.round((wins / total) * 100) : 0;
-
-  if ($('#standingsTotalProfit')) $('#standingsTotalProfit').textContent = `${net >= 0 ? '' : '-'}${formatMoney(net)}`;
-  if ($('#standingsWinRate')) $('#standingsWinRate').textContent = `${winPct}%`;
-  if ($('#standingsWinLossRatio')) $('#standingsWinLossRatio').textContent = `${wins}W / ${total - wins}L`;
-  if ($('#standingsTotalLobbies')) $('#standingsTotalLobbies').textContent = total;
+  renderStandingsStats();
 
   // Render Matches List
   const list = $('#matchRegistryList'), empty = $('#emptyMatchState');
@@ -952,32 +988,12 @@ function renderStandingsTab() {
       </div>
     `;
   });
-
-  // Render Roster list if present
-  renderRosterList();
   lucide.createIcons();
 }
 
 function filterMatches() {
   state.matchSearchText = $('#matchSearchInput')?.value || '';
   renderStandingsTab();
-}
-
-function renderRosterList() {
-  const list = $('#playersList');
-  if (!list) return;
-  list.innerHTML = '';
-  state.players.forEach(p => {
-    const inits = p.name.substring(0,2).toUpperCase();
-    list.innerHTML += `
-      <div class="player-roster-card" onclick="openPlayerProfile('${p.id}')">
-        <div class="player-roster-avatar" style="background:${p.color};">${inits}</div>
-        <div class="player-roster-info">
-          <div class="player-roster-name">${p.name}</div>
-        </div>
-      </div>
-    `;
-  });
 }
 
 function openAddLobbyModal() {
