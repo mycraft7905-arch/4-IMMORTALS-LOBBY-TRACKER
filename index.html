@@ -3,32 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Lobby Tracker V3.2 – Hardcore Analytics</title>
-  <meta name="description" content="Hardcore Gaming Lobby & Financial Performance Tracker">
-
-  <!-- Google Fonts -->
+  <title>4 IMMORTALS – Weekly Profit & Wallet Tracker V3.5</title>
+  <meta name="description" content="Esports Team Weekly Profit, Loss Recovery, Settlement & Wallet Management System">
+  <meta name="theme-color" content="#05070a">
+  
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Lucide Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Firebase Compat Libraries -->
+  
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-  <!-- Vanilla Tilt (3D Effects) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  
+  <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-
-  <!-- Custom Styles -->
+  
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="dark-theme">
 
-  <!-- Dynamic Background Mesh -->
-  <div class="mesh-bg">
+  <!-- Hyper-Premium Animated Background (Mesh Gradient + Glows) -->
+  <div class="mesh-bg" aria-hidden="true">
     <div class="mesh-blob blob-1"></div>
     <div class="mesh-blob blob-2"></div>
     <div class="mesh-blob blob-3"></div>
@@ -36,220 +37,393 @@
     <div class="mesh-overlay"></div>
   </div>
 
-  <!-- Sync Status Floating Bar -->
-  <div class="sync-bar">
-    <span class="status-indicator offline" id="syncStatusIndicator"></span>
-    <span id="syncStatusText">Connecting...</span>
-  </div>
-
-  <!-- Toast Container -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- App Loader -->
-  <div class="app-loader active" id="appLoader">
+  <!-- Loading Overlay -->
+  <div id="appLoader" class="app-loader active">
     <div class="loader-spinner"></div>
-    <p class="orbitron" style="letter-spacing: 2px; font-size: 0.8rem;">INITIALIZING LTX V3.2...</p>
+    <p class="orbitron" style="letter-spacing: 2px; font-size: 0.85rem;">INITIALIZING 4 IMMORTALS V3.5...</p>
   </div>
 
-  <!-- Main App Shell -->
-  <div class="app-shell" id="mainAppShell" style="display: none;">
+  <!-- ── APP SHELL ── -->
+  <div class="app-shell" style="display: none;" id="mainAppShell">
 
-    <!-- Top Header -->
-    <header class="app-header">
+    <!-- ════════ HEADER ════════ -->
+    <header class="app-header" id="appHeader" data-tilt data-tilt-max="2" data-tilt-scale="1.01">
       <div class="header-brand">
         <div class="brand-icon">
-          <i data-lucide="zap"></i>
+          <i data-lucide="shield-check"></i>
         </div>
         <div class="brand-text">
-          <h1>LOBBY<span>TRACKER</span> <span class="brand-version">V3.2</span></h1>
-          <p class="brand-subtitle">HARDCORE ANALYTICS</p>
+          <h1>4 <span>IMMORTALS</span> <em class="brand-version">V3.5</em></h1>
+          <p class="brand-subtitle">WEEKLY PROFIT & WALLET TRACKER</p>
         </div>
       </div>
 
       <div class="header-right">
-        <div class="time-badge">--:--</div>
-        <button id="adminStatusBtn" class="admin-badge-btn" onclick="handleAdminBadgeClick()">
+        <div id="dateTimeDisplay" class="datetime-display">
+          <span class="date">Loading...</span>
+          <span class="time-badge">--:-- IST</span>
+        </div>
+        <button id="adminStatusBtn" class="admin-badge-btn locked" onclick="handleAdminBadgeClick()" aria-label="Admin toggle">
           <i data-lucide="lock" id="adminLockIcon"></i>
-          <span id="adminStatusText">Viewer</span>
+          <span id="adminStatusText" class="admin-badge-text">Viewer</span>
         </button>
       </div>
     </header>
 
-    <!-- Content Panels -->
-    <main class="tab-panels">
+    <!-- ════════ MAIN CONTENT (3 TABS) ════════ -->
+    <main class="tab-panels" id="mainContent">
 
-      <!-- ══════════ TAB 1: DASHBOARD (HQ) ══════════ -->
-      <section class="tab-panel active" id="panelDashboard">
-        
-        <!-- Overall Stats Grid -->
-        <div class="stats-row">
-          <!-- Net Profit -->
-          <div class="stat-card glass-card" data-tilt>
+      <!-- ══════════════════════════════════════════════════
+           TAB 1: FINANCE HQ (DASHBOARD)
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel active" id="panelFinance">
+
+        <!-- Top Stat Cards (Current Week Financial Status) -->
+        <section class="stats-row">
+          <!-- Current Week Result -->
+          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
             <div class="stat-header">
-              <span class="stat-title">TEAM NET PROFIT</span>
-              <div class="stat-icon-wrapper profit-color"><i data-lucide="wallet"></i></div>
+              <span class="stat-title">THIS WEEK NET RESULT</span>
+              <div class="stat-icon-wrapper profit-color" id="weekNetIconWrap"><i data-lucide="trending-up"></i></div>
             </div>
-            <div class="stat-value orbitron" id="totalProfit">₹0.00</div>
+            <div class="stat-value orbitron" id="weekNetResult">₹0.00</div>
             <div class="stat-footer">
-              <span class="stat-subtext">Lifetime Balance</span>
+              <span class="stat-subtext" id="weekNetSubtext">Mon – Sun (IST)</span>
             </div>
           </div>
 
-          <!-- Win Rate -->
-          <div class="stat-card glass-card" data-tilt>
+          <!-- Loss To Recover -->
+          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
             <div class="stat-header">
-              <span class="stat-title">TEAM WIN RATE</span>
-              <div class="stat-icon-wrapper win-color"><i data-lucide="trophy"></i></div>
+              <span class="stat-title">LOSS TO RECOVER</span>
+              <div class="stat-icon-wrapper spent-color"><i data-lucide="alert-triangle"></i></div>
             </div>
-            <div class="stat-value-container">
-              <div class="stat-value orbitron" id="winRate">0%</div>
-            </div>
+            <div class="stat-value orbitron lost-color" id="lossToRecoverVal">₹0.00</div>
             <div class="stat-footer">
-              <span class="stat-subtext" id="winLossRatio">0W / 0L</span>
+              <span class="stat-subtext">Must be recovered first</span>
             </div>
           </div>
 
-          <!-- Matches Played -->
-          <div class="stat-card glass-card" data-tilt>
+          <!-- Current Distributable Profit -->
+          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
             <div class="stat-header">
-              <span class="stat-title">TOTAL MATCHES</span>
-              <div class="stat-icon-wrapper neutral-color"><i data-lucide="swords"></i></div>
+              <span class="stat-title">DISTRIBUTABLE PROFIT</span>
+              <div class="stat-icon-wrapper win-color"><i data-lucide="coins"></i></div>
             </div>
-            <div class="stat-value orbitron" id="totalLobbies">0</div>
+            <div class="stat-value orbitron won-color" id="distributableProfitVal">₹0.00</div>
             <div class="stat-footer">
-              <span class="stat-subtext">Logged Lobbies</span>
+              <span class="stat-subtext" id="distributableShareText">₹0.00 / member (20%)</span>
             </div>
           </div>
 
-          <!-- Buyins / Earnings -->
-          <div class="stat-card glass-card" data-tilt>
+          <!-- Volume Overview -->
+          <div class="stat-card glass-card" data-tilt data-tilt-max="5" data-tilt-glare data-tilt-max-glare="0.2">
             <div class="stat-header">
-              <span class="stat-title">VOLUME</span>
-              <div class="stat-icon-wrapper spent-color"><i data-lucide="arrow-left-right"></i></div>
+              <span class="stat-title">THIS WEEK VOLUME</span>
+              <div class="stat-icon-wrapper neutral-color"><i data-lucide="arrow-left-right"></i></div>
             </div>
             <div class="cashflow-metrics">
               <div class="metric-group">
-                <span class="metric-label">EARNED</span>
-                <span class="metric-value won-color orbitron" id="totalEarnings">₹0.00</span>
+                <span class="metric-label">INCOME</span>
+                <span class="metric-value won-color orbitron" id="weekIncome">₹0.00</span>
               </div>
               <div class="metric-divider"></div>
               <div class="metric-group">
-                <span class="metric-label">ENTRY FEES</span>
-                <span class="metric-value lost-color orbitron" id="totalBuyins">₹0.00</span>
+                <span class="metric-label">EXPENSES</span>
+                <span class="metric-value lost-color orbitron" id="weekExpenses">₹0.00</span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Profit Trend Chart -->
-        <section class="glass-card chart-section">
-          <div class="card-header">
-            <div class="card-header-title">
-              <i data-lucide="trending-up" style="color: var(--cyan)"></i>
-              <h2>Profit Trajectory</h2>
-            </div>
-          </div>
-          <div class="chart-container">
-            <svg id="trendChart" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
-            <div class="chart-placeholder" id="chartPlaceholder">
-              <i data-lucide="line-chart"></i>
-              <p>Log 2 or more lobbies to view trajectory graph</p>
             </div>
           </div>
         </section>
 
-        <!-- Match Registry -->
-        <section class="glass-card history-section">
+        <!-- 5-Member Team Wallet Table -->
+        <section class="glass-card wallet-section">
           <div class="card-header">
             <div class="card-header-title">
-              <i data-lucide="history" style="color: var(--cyan)"></i>
-              <h2>Match History</h2>
+              <i data-lucide="wallet" class="cyan-icon"></i>
+              <h2>Team Wallets & Member Shares</h2>
             </div>
-            <button class="btn btn-primary btn-sm disabled" id="addLobbyBtn" onclick="openAddLobbyModal()">
-              <i data-lucide="plus"></i> Log Match
-            </button>
+            <div class="header-action-btns">
+              <button class="btn btn-ghost btn-sm disabled" id="editMembersBtn" onclick="openEditMembersModal()" disabled>
+                <i data-lucide="edit-3"></i> Edit Names
+              </button>
+            </div>
+          </div>
+
+          <div class="wallet-table-container">
+            <table class="wallet-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Share</th>
+                  <th>Wallet (Earned)</th>
+                  <th>Total Paid</th>
+                  <th>Pending Payment</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="walletTableBody">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div class="wallet-rule-banner">
+            <i data-lucide="shield-check"></i>
+            <span><strong>Rule Enforcement:</strong> Wallets can ONLY increase. Loss directly increases <em>Loss To Recover</em> and does NOT reduce wallets.</span>
+          </div>
+        </section>
+
+        <!-- Weekly Performance Graph -->
+        <section class="chart-section glass-card" data-tilt data-tilt-max="1" data-tilt-perspective="1000">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="activity" class="cyan-icon"></i>
+              <h2>Weekly Financial Performance & Loss Recovery Graph</h2>
+            </div>
+          </div>
+          <div class="chart-container" id="chartContainer">
+            <svg id="trendChart" width="100%" height="100%" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+            <div id="chartPlaceholder" class="chart-placeholder">
+              <i data-lucide="line-chart"></i>
+              <p>Add transactions or settle weeks to view financial chart</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Current Week Transactions Log -->
+        <section class="history-section glass-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="file-text" class="cyan-icon"></i>
+              <h2>Current Week Transactions Log</h2>
+            </div>
+            <div class="history-actions">
+              <button id="addTxBtn" class="btn btn-primary btn-sm disabled" onclick="openAddTxModal()" disabled>
+                <i data-lucide="plus"></i><span>Add Transaction</span>
+              </button>
+              <button id="adminSettingsBtn" class="btn btn-ghost btn-icon disabled" onclick="openAdminSettingsModal()" disabled aria-label="Settings">
+                <i data-lucide="settings"></i>
+              </button>
+            </div>
           </div>
 
           <div class="history-filters">
             <div class="search-box">
               <i data-lucide="search"></i>
-              <input type="text" id="searchInput" placeholder="Search map, player, or date..." oninput="filterLobbies()">
+              <input type="text" id="txSearchInput" placeholder="Search description, category, or note..." oninput="filterTransactions()">
             </div>
             <div class="filter-tabs">
-              <button class="filter-tab active" data-filter="all" onclick="setFilterTab('all')">All</button>
-              <button class="filter-tab" data-filter="win" onclick="setFilterTab('win')">Wins</button>
-              <button class="filter-tab" data-filter="loss" onclick="setFilterTab('loss')">Losses</button>
+              <button class="filter-tab active" data-txfilter="all" onclick="setTxFilterTab('all')">All</button>
+              <button class="filter-tab" data-txfilter="income" onclick="setTxFilterTab('income')">Income</button>
+              <button class="filter-tab" data-txfilter="expense" onclick="setTxFilterTab('expense')">Expenses</button>
             </div>
           </div>
 
-          <div class="lobby-list" id="lobbyList">
-            <!-- Dynamic Match Cards -->
-          </div>
-          <div class="empty-list-state" id="emptyListState">
-            <i data-lucide="ghost"></i>
-            <p>No matches match filter</p>
+          <!-- Transaction Items List -->
+          <div class="lobby-list" id="txList"></div>
+          
+          <div id="emptyTxState" class="empty-list-state">
+            <i data-lucide="receipt"></i>
+            <p>No transactions recorded for this week.</p>
+            <span class="hint-text">Unlock Admin Mode to record tournament winnings, lobby entry, etc.</span>
           </div>
         </section>
-      </section>
 
-      <!-- ══════════ TAB 2: ROSTER & PLAYERS ══════════ -->
-      <section class="tab-panel" id="panelPlayers">
+      </div><!-- /panelFinance -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB 2: SETTLEMENTS & PAYMENTS
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelSettlements">
+
+        <!-- Sunday Settlement Action Card -->
+        <section class="glass-card settlement-action-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="calendar-check" class="cyan-icon"></i>
+              <h2>Sunday Weekly Settlement Protocol</h2>
+            </div>
+            <span class="brand-version" id="settlementWeekBadge">Week --</span>
+          </div>
+
+          <div class="settlement-status-box">
+            <div class="settlement-info-grid">
+              <div class="info-item">
+                <span class="info-label">Week Range</span>
+                <span class="info-val" id="settleRangeText">Loading...</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-val badge-tag" id="settleStatusBadge">Active / Open</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Projected Net Result</span>
+                <span class="info-val orbitron" id="settleProjectedNet">₹0.00</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Each Member Wallet Gain</span>
+                <span class="info-val orbitron won-color" id="settleProjectedPerMember">+₹0.00</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary w-full disabled mt-3" id="settleWeekTriggerBtn" onclick="openSettleWeekModal()" disabled>
+              <i data-lucide="check-circle-2"></i> Close & Settle This Week
+            </button>
+          </div>
+        </section>
+
+        <!-- Closed Weekly Settlements History -->
         <section class="glass-card">
           <div class="card-header">
             <div class="card-header-title">
-              <i data-lucide="users" style="color: var(--cyan)"></i>
-              <h2>Operator Roster</h2>
+              <i data-lucide="history" class="cyan-icon"></i>
+              <h2>Closed Weekly Settlement History</h2>
             </div>
-            <span class="brand-version" id="playerCountBadge">0 Operators</span>
           </div>
-
-          <!-- Add Player Form -->
-          <div class="add-player-form">
-            <div class="form-row" style="margin-bottom:0.5rem;">
-              <div class="form-group flex-1">
-                <input type="text" id="newPlayerName" placeholder="Operator Call-Sign (Name)">
-              </div>
-              <div class="form-group" style="width: auto;">
-                <label style="margin-bottom:2px; font-size:0.65rem;">Theme</label>
-                <div class="color-picker-wrapper" style="display:flex; align-items:center; gap:0.5rem;">
-                  <input type="color" id="newPlayerColor" value="#00f2fe" style="width:40px; height:40px; border-radius:8px; border:none; cursor:pointer; background:none;">
-                  <span id="colorPreviewSpan" style="width:16px; height:16px; border-radius:50%; background:#00f2fe;"></span>
-                </div>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-sm add-player-btn disabled" id="addPlayerBtn" onclick="addPlayer()">
-              <i data-lucide="user-plus"></i> Recruit Operator
-            </button>
-          </div>
-
-          <div class="players-grid" id="playersList">
-            <!-- Dynamic Player Cards -->
-          </div>
-          <div class="empty-list-state" id="emptyPlayersState">
-            <i data-lucide="user-x"></i>
-            <p>No operators registered in roster</p>
+          
+          <div class="settlements-history-list" id="closedWeeksList"></div>
+          <div class="empty-list-state" id="emptyClosedWeeksState">
+            <i data-lucide="archive"></i>
+            <p>No settled weeks archived yet.</p>
           </div>
         </section>
-      </section>
+
+        <!-- Payment History Log -->
+        <section class="glass-card mt-3">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="banknote" class="cyan-icon"></i>
+              <h2>Actual Payment History Ledger</h2>
+            </div>
+          </div>
+
+          <div class="payments-list" id="paymentsLedgerList"></div>
+          <div class="empty-list-state" id="emptyPaymentsState">
+            <i data-lucide="credit-card"></i>
+            <p>No physical payment records created yet.</p>
+          </div>
+        </section>
+
+      </div><!-- /panelSettlements -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB 3: OVERALL STANDINGS & MATCHES (PRESERVED - REQUIREMENT 19)
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelStandings">
+
+        <!-- Standings Stats Summary -->
+        <section class="stats-row">
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-title">HISTORICAL MATCH PROFIT</span>
+              <div class="stat-icon-wrapper profit-color"><i data-lucide="trophy"></i></div>
+            </div>
+            <div class="stat-value orbitron" id="standingsTotalProfit">₹0.00</div>
+            <div class="stat-footer">
+              <span class="stat-subtext">Match History Balance</span>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-title">MATCH WIN RATE</span>
+              <div class="stat-icon-wrapper win-color"><i data-lucide="crosshair"></i></div>
+            </div>
+            <div class="stat-value orbitron" id="standingsWinRate">0%</div>
+            <div class="stat-footer">
+              <span class="stat-subtext" id="standingsWinLossRatio">0W / 0L</span>
+            </div>
+          </div>
+
+          <div class="stat-card glass-card">
+            <div class="stat-header">
+              <span class="stat-title">LOBBIES PLAYED</span>
+              <div class="stat-icon-wrapper neutral-color"><i data-lucide="swords"></i></div>
+            </div>
+            <div class="stat-value orbitron" id="standingsTotalLobbies">0</div>
+            <div class="stat-footer">
+              <span class="stat-subtext">Preserved Match Records</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Match Registry & Logger -->
+        <section class="history-section glass-card mt-3">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="list" class="cyan-icon"></i>
+              <h2>Match Registry & Standings</h2>
+            </div>
+            <div class="history-actions">
+              <button id="addLobbyBtn" class="btn btn-primary btn-sm disabled" onclick="openAddLobbyModal()" disabled>
+                <i data-lucide="plus"></i><span>Log Match</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="history-filters">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="matchSearchInput" placeholder="Search matches, maps..." oninput="filterMatches()">
+            </div>
+          </div>
+
+          <!-- Lobby Cards List -->
+          <div class="lobby-list" id="matchRegistryList"></div>
+          
+          <div id="emptyMatchState" class="empty-list-state">
+            <i data-lucide="folder-open"></i>
+            <p>No historical match records found.</p>
+          </div>
+        </section>
+
+        <!-- Preserved Roster Management Section -->
+        <section class="players-manage-card glass-card mt-3">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="users" class="cyan-icon"></i>
+              <h2>Roster Ranks & Standings</h2>
+            </div>
+          </div>
+          <div class="players-grid" id="playersList"></div>
+        </section>
+
+      </div><!-- /panelStandings -->
 
     </main>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-      <button class="bottom-nav-btn active" id="bnDashboard" onclick="switchTab('dashboard')">
-        <i data-lucide="layout-dashboard"></i>
-        <span>HQ</span>
+    <!-- ════════ STATUS BAR ════════ -->
+    <div class="sync-bar">
+      <span id="syncStatusIndicator" class="status-indicator online"></span>
+      <span id="syncStatusText">Quantum Sync Active</span>
+    </div>
+
+    <!-- ════════ BOTTOM NAV (3 TABS) ════════ -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="bottom-nav-btn active" id="bnFinance" onclick="switchTab('finance')">
+        <i data-lucide="wallet"></i>
+        <span>Finance HQ</span>
       </button>
-      <button class="bottom-nav-btn" id="bnPlayers" onclick="switchTab('players')">
-        <i data-lucide="users"></i>
-        <span>Roster</span>
+      <button class="bottom-nav-btn" id="bnSettlements" onclick="switchTab('settlements')">
+        <i data-lucide="calendar-check"></i>
+        <span>Settlements</span>
+      </button>
+      <button class="bottom-nav-btn" id="bnStandings" onclick="switchTab('standings')">
+        <i data-lucide="trophy"></i>
+        <span>Standings</span>
       </button>
     </nav>
-  </div>
 
-  <!-- ══════════ MODALS ══════════ -->
+  </div><!-- /app-shell -->
 
-  <!-- Admin Auth (PIN) -->
+
+  <!-- ══════════════════════════════════════════════════
+       MODALS
+       ══════════════════════════════════════════════════ -->
+
+  <!-- Admin Auth (PIN Passcode) -->
   <div class="modal-overlay" id="pinModal">
     <div class="modal-sheet pin-modal glass-card">
       <div class="modal-handle"></div>
@@ -257,8 +431,8 @@
 
       <div class="pin-header">
         <div class="pin-icon-glow"><i data-lucide="shield-alert"></i></div>
-        <h2 id="pinModalTitle">Passcode Unlock</h2>
-        <p>Enter 4-digit PIN</p>
+        <h2 id="pinModalTitle">Manager Authentication</h2>
+        <p>Enter 4-Digit Passcode</p>
       </div>
 
       <div class="pin-input-area">
@@ -281,14 +455,219 @@
     </div>
   </div>
 
-  <!-- Log / Edit Match Modal -->
+  <!-- Add / Edit Transaction Modal -->
+  <div class="modal-overlay" id="transactionModal">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeTxModal()"><i data-lucide="x"></i></button>
+      
+      <div class="modal-header">
+        <h2 id="txModalTitle">Add Financial Transaction</h2>
+      </div>
+
+      <form id="txForm" onsubmit="saveTransaction(event)">
+        <input type="hidden" id="editTxId">
+        
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="txDate"><i data-lucide="calendar"></i> Date</label>
+            <input type="date" id="txDate" required>
+          </div>
+          <div class="form-group flex-1">
+            <label><i data-lucide="arrow-left-right"></i> Type</label>
+            <div class="outcome-toggle">
+              <input type="radio" name="txType" id="txTypeIncome" value="income" checked onchange="updateTxTypeStyling()">
+              <label for="txTypeIncome" class="outcome-label win-select"><i data-lucide="trending-up"></i> Income</label>
+              <input type="radio" name="txType" id="txTypeExpense" value="expense" onchange="updateTxTypeStyling()">
+              <label for="txTypeExpense" class="outcome-label loss-select"><i data-lucide="trending-down"></i> Expense</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="txAmount"><i data-lucide="indian-rupee"></i> Amount (₹)</label>
+          <div class="input-prefix-wrapper">
+            <span class="currency-symbol">₹</span>
+            <input type="number" id="txAmount" min="0" step="0.01" placeholder="0.00" required inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="txDescription"><i data-lucide="file-text"></i> Description</label>
+          <input type="text" id="txDescription" placeholder="e.g., Tournament Prize, Lobby Entry, Boot Camp Cost" required autocomplete="off">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="txCategory"><i data-lucide="tag"></i> Category (Optional)</label>
+            <select id="txCategory">
+              <option value="Lobby Winnings">Lobby Winnings</option>
+              <option value="Lobby Entry">Lobby Entry</option>
+              <option value="Tournament Prize">Tournament Prize</option>
+              <option value="Tournament Entry">Tournament Entry</option>
+              <option value="Sponsorship / Other Income">Sponsorship / Other Income</option>
+              <option value="Team Expense">Team Expense</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="txNote"><i data-lucide="sticky-note"></i> Note / Memo (Optional)</label>
+          <input type="text" id="txNote" placeholder="Additional details..." autocomplete="off">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary w-full"><i data-lucide="check"></i> Commit Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sunday Settle Week Modal (Confirmation & Preview) -->
+  <div class="modal-overlay" id="settleModal">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeSettleModal()"><i data-lucide="x"></i></button>
+
+      <div class="modal-header">
+        <h2>Confirm Weekly Settlement</h2>
+      </div>
+
+      <div class="settlement-preview-body">
+        <div class="settle-summary-card">
+          <div class="settle-summary-row">
+            <span>Week Range:</span> <strong id="previewSettleRange">--</strong>
+          </div>
+          <div class="settle-summary-row">
+            <span>Total Income:</span> <strong class="won-color" id="previewSettleIncome">₹0.00</strong>
+          </div>
+          <div class="settle-summary-row">
+            <span>Total Expenses:</span> <strong class="lost-color" id="previewSettleExpenses">₹0.00</strong>
+          </div>
+          <div class="settle-summary-row highlight-row">
+            <span>Net Week Result:</span> <strong class="orbitron" id="previewSettleNet">₹0.00</strong>
+          </div>
+          <hr class="card-divider">
+          <div class="settle-summary-row">
+            <span>Previous Loss To Recover:</span> <span id="previewSettlePrevLoss">₹0.00</span>
+          </div>
+          <div class="settle-summary-row">
+            <span>Loss Recovered This Week:</span> <span class="won-color" id="previewSettleLossRecovered">₹0.00</span>
+          </div>
+          <div class="settle-summary-row">
+            <span>Remaining Loss To Recover:</span> <span class="lost-color" id="previewSettleRemainingLoss">₹0.00</span>
+          </div>
+          <div class="settle-summary-row highlight-row">
+            <span>Distributable Profit:</span> <strong class="orbitron won-color" id="previewSettleDistributable">₹0.00</strong>
+          </div>
+        </div>
+
+        <h3 class="mt-3 text-sm font-bold uppercase tracking-wider text-muted">Wallet Updates Preview (+20% Each)</h3>
+        <div class="wallet-gains-preview-list" id="previewWalletGainsList">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="form-actions mt-3">
+          <button class="btn btn-primary w-full" id="confirmSettleBtn" onclick="confirmSettleWeek()">
+            <i data-lucide="lock"></i> Lock & Settle Week
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closePaymentModal()"><i data-lucide="x"></i></button>
+
+      <div class="modal-header">
+        <h2>Record Actual Member Payment</h2>
+      </div>
+
+      <form id="paymentForm" onsubmit="savePayment(event)">
+        <input type="hidden" id="payMemberId">
+        
+        <div class="form-group mb-3">
+          <label>Member</label>
+          <input type="text" id="payMemberNameDisplay" readonly style="opacity: 0.7;">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="payDate"><i data-lucide="calendar"></i> Payment Date</label>
+            <input type="date" id="payDate" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="payAmount"><i data-lucide="indian-rupee"></i> Amount Paid (₹)</label>
+            <div class="input-prefix-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="payAmount" min="0.01" step="0.01" placeholder="0.00" required inputmode="decimal">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="payNote"><i data-lucide="sticky-note"></i> Payment Reference / Note</label>
+          <input type="text" id="payNote" placeholder="e.g., UPI Transfer, Cash, Bank Txn ID..." autocomplete="off">
+        </div>
+
+        <div class="form-preview-card">
+          <span class="preview-label">Current Pending Balance:</span>
+          <span class="preview-value orbitron" id="payPendingPreview">₹0.00</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full mt-2"><i data-lucide="check-circle-2"></i> Record Payment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Member Names Modal -->
+  <div class="modal-overlay" id="editMembersModal">
+    <div class="modal-sheet glass-card">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeEditMembersModal()"><i data-lucide="x"></i></button>
+
+      <div class="modal-header">
+        <h2>Customize Team Member Call-Signs</h2>
+      </div>
+
+      <form id="editMembersForm" onsubmit="saveMemberNames(event)">
+        <div class="form-group mb-3">
+          <label>Player 1 (20% Share)</label>
+          <input type="text" id="nameInputP1" required autocomplete="off">
+        </div>
+        <div class="form-group mb-3">
+          <label>Player 2 (20% Share)</label>
+          <input type="text" id="nameInputP2" required autocomplete="off">
+        </div>
+        <div class="form-group mb-3">
+          <label>Player 3 (20% Share)</label>
+          <input type="text" id="nameInputP3" required autocomplete="off">
+        </div>
+        <div class="form-group mb-3">
+          <label>Player 4 (20% Share)</label>
+          <input type="text" id="nameInputP4" required autocomplete="off">
+        </div>
+        <div class="form-group mb-3">
+          <label>Manager (20% Share)</label>
+          <input type="text" id="nameInputMgr" required autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full mt-2"><i data-lucide="save"></i> Update Call-Signs</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Log Match Modal (PRESERVED) -->
   <div class="modal-overlay" id="lobbyModal">
     <div class="modal-sheet glass-card">
       <div class="modal-handle"></div>
       <button class="modal-close" onclick="closeLobbyModal()"><i data-lucide="x"></i></button>
-      
+
       <div class="modal-header">
-        <h2 id="lobbyModalTitle">Log Match</h2>
+        <h2 id="lobbyModalTitle">Log Match Record</h2>
       </div>
 
       <form id="lobbyForm" onsubmit="saveLobby(event)">
@@ -306,46 +685,41 @@
 
         <div class="form-group mb-3">
           <label for="lobbyMap"><i data-lucide="map-pin"></i> Map / Mode</label>
-          <input type="text" id="lobbyMap" placeholder="e.g. Ascent, Dust2, Ranked">
+          <input type="text" id="lobbyMap" placeholder="e.g. Ascent, Erangel, Ranked">
         </div>
 
-        <!-- Lineup Selector -->
         <div class="form-group mb-3">
           <label><i data-lucide="users"></i> Match Lineup</label>
-          <div class="lineup-selector" id="lineupSelector">
-            <p class="hint-text">No players in roster.</p>
-          </div>
+          <div class="lineup-selector" id="lineupSelector"></div>
         </div>
 
-        <!-- Mistakes & Manual Distribution -->
         <div class="form-group mb-3" id="mistakesContainer" style="display: none;">
-          <label><i data-lucide="alert-circle"></i> Notes & Individual Net Profit</label>
+          <label><i data-lucide="alert-circle"></i> Player Notes / Mistakes</label>
           <div id="mistakesList" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
         </div>
 
         <div class="form-row">
           <div class="form-group flex-1">
-            <label for="lobbyPrice"><i data-lucide="indian-rupee"></i> Buy-In / Entry</label>
+            <label for="lobbyPrice"><i data-lucide="indian-rupee"></i> Entry Fee</label>
             <div class="input-prefix-wrapper">
               <span class="currency-symbol">₹</span>
-              <input type="number" id="lobbyPrice" step="0.01" value="50" placeholder="0.00" oninput="calculateNetForm()" required>
+              <input type="number" id="lobbyPrice" step="0.01" value="50" oninput="calculateNetForm()" required>
+            </div>
+          </div>
+          <div class="form-group flex-1">
+            <label><i data-lucide="award"></i> Outcome</label>
+            <div class="outcome-toggle">
+              <input type="radio" id="outcomeWin" name="outcome" value="win" checked onchange="toggleOutcomeFields(); calculateNetForm();">
+              <label for="outcomeWin" class="outcome-label win-label"><i data-lucide="trophy"></i> WIN</label>
+
+              <input type="radio" id="outcomeLoss" name="outcome" value="loss" onchange="toggleOutcomeFields(); calculateNetForm();">
+              <label for="outcomeLoss" class="outcome-label loss-label"><i data-lucide="skull"></i> LOSS</label>
             </div>
           </div>
         </div>
 
-        <div class="form-group mb-3">
-          <label><i data-lucide="award"></i> Match Outcome</label>
-          <div class="outcome-toggle">
-            <input type="radio" id="outcomeWin" name="outcome" value="win" checked onchange="toggleOutcomeFields(); calculateNetForm();">
-            <label for="outcomeWin" class="outcome-label win-label"><i data-lucide="trophy"></i> VICTORY</label>
-
-            <input type="radio" id="outcomeLoss" name="outcome" value="loss" onchange="toggleOutcomeFields(); calculateNetForm();">
-            <label for="outcomeLoss" class="outcome-label loss-label"><i data-lucide="skull"></i> DEFEAT</label>
-          </div>
-        </div>
-
         <div class="form-group mb-3" id="moneyWonGroup">
-          <label for="moneyWon"><i data-lucide="trending-up"></i> Total Return / Won Amount</label>
+          <label for="moneyWon"><i data-lucide="trending-up"></i> Return / Prize</label>
           <div class="input-prefix-wrapper">
             <span class="currency-symbol">₹</span>
             <input type="number" id="moneyWon" step="0.01" placeholder="100.00" oninput="calculateNetForm()">
@@ -353,7 +727,7 @@
         </div>
 
         <div class="form-group mb-3" id="moneyLostGroup" style="display: none;">
-          <label for="moneyLost"><i data-lucide="trending-down"></i> Total Loss Amount</label>
+          <label for="moneyLost"><i data-lucide="trending-down"></i> Loss Amount</label>
           <div class="input-prefix-wrapper">
             <span class="currency-symbol">₹</span>
             <input type="number" id="moneyLost" step="0.01" placeholder="50.00" oninput="calculateNetForm()">
@@ -361,16 +735,16 @@
         </div>
 
         <div class="form-preview-card">
-          <span class="preview-label">Calculated Net Match Profit:</span>
+          <span class="preview-label">Net Profit/Loss:</span>
           <span class="preview-value orbitron" id="formNetPreview">₹0.00</span>
         </div>
 
-        <button type="submit" class="btn btn-primary w-full mt-3"><i data-lucide="save"></i> Commit Match</button>
+        <button type="submit" class="btn btn-primary w-full mt-2"><i data-lucide="save"></i> Commit Match</button>
       </form>
     </div>
   </div>
 
-  <!-- Player Profile Modal -->
+  <!-- Player Profile Modal (PRESERVED) -->
   <div class="modal-overlay" id="playerProfileModal">
     <div class="modal-sheet glass-card profile-modal">
       <div class="modal-handle"></div>
@@ -388,9 +762,9 @@
           <span class="stat-subtext" id="profileWL">0W / 0L</span>
         </div>
         <div class="stat-card glass-card">
-          <span class="stat-title">NET PROFIT</span>
-          <span class="stat-value orbitron" id="profileProfit">₹0.00</span>
-          <span class="stat-subtext" id="profileMatches">0 Matches</span>
+          <span class="stat-title">MATCHES</span>
+          <span class="stat-value orbitron" id="profileMatches">0</span>
+          <span class="stat-subtext" id="profileProfit">₹0.00</span>
         </div>
       </div>
 
@@ -419,30 +793,33 @@
                 <input type="password" id="newPin" maxlength="4" placeholder="New PIN" required inputmode="numeric">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm w-full">Commit Changes</button>
+            <button type="submit" class="btn btn-primary btn-sm w-full">Commit Passcode</button>
             <p id="pinUpdateStatus" class="status-msg" style="color:var(--cyan);font-size:0.8rem;margin-top:0.5rem;text-align:center;"></p>
           </form>
-          <button class="btn btn-ghost w-full mt-3" onclick="handleAdminLogout()">
-            <i data-lucide="lock"></i> Lock App
-          </button>
         </div>
 
         <div class="settings-section mt-3">
-          <h3><i data-lucide="database"></i> Data Backup & Export</h3>
-          <div class="form-row">
-            <button class="btn btn-ghost btn-sm flex-1" onclick="exportData()"><i data-lucide="download"></i> Export JSON</button>
+          <h3><i data-lucide="database"></i> Cloud Database Endpoint</h3>
+          <div class="form-group">
+            <input type="text" id="firebaseDbInput" placeholder="https://your-db.asia-southeast1.firebasedatabase.app/">
+            <button class="btn btn-primary btn-sm w-full mt-2" onclick="saveFirebaseUrl()"><i data-lucide="link"></i> Reconnect Database</button>
           </div>
-          <button class="btn btn-danger btn-sm w-full mt-3" onclick="clearAllData()"><i data-lucide="trash-2"></i> Danger: Wipe Matches</button>
+        </div>
+
+        <div class="settings-section mt-3">
+          <h3><i data-lucide="download"></i> Backup & Restore</h3>
+          <div class="backup-actions-grid">
+            <button class="btn btn-ghost" onclick="exportData()"><i data-lucide="download"></i> Export JSON</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Settings Gear Button -->
-  <button id="adminSettingsBtn" class="action-btn disabled" onclick="openAdminSettingsModal()" style="position:fixed; top:0.85rem; right:120px; z-index:91; width:36px; height:36px;">
-    <i data-lucide="settings"></i>
-  </button>
+  <!-- Toasts -->
+  <div id="toastContainer" class="toast-container"></div>
 
+  <!-- Core App Logic -->
   <script src="app.js"></script>
 </body>
 </html>
