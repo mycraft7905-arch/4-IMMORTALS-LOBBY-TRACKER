@@ -26,7 +26,7 @@ let state = {
   // App & Auth State
   adminPIN: '0852',
   isAdmin: false,
-  activeTab: 'finance', // 'finance', 'settlements', 'standings'
+  activeTab: 'finance', // 'finance', 'wallets', 'settlements'
   txFilterTab: 'all',
   txSearchText: '',
   matchSearchText: ''
@@ -146,9 +146,9 @@ function saveLocalState() {
 }
 
 function renderAll() {
-  renderFinanceTab();
-  renderSettlementsTab();
-  renderStandingsTab();
+  renderFinanceTab();   // Page 1: Overall Standings, Add & Edit Lobbies, Performance Graph
+  renderWalletsTab();   // Page 2: Current Week Stats & 5-Member Money/Wallet Distribution
+  renderSettlementsTab(); // Page 3: Settlements & Payment Ledger
   updateTime();
 }
 
@@ -184,8 +184,8 @@ function initFirebase() {
     dbRef.child('weeklySettlements').on('value', snap => { if (snap.val()) { state.weeklySettlements = snap.val(); renderAll(); } });
     
     // Legacy preserved matches & players listener
-    dbRef.child('matches').on('value', snap => { if (snap.val()) { state.matches = snap.val(); renderStandingsTab(); } });
-    dbRef.child('players').on('value', snap => { if (snap.val()) { state.players = snap.val(); renderStandingsTab(); } });
+    dbRef.child('matches').on('value', snap => { if (snap.val()) { state.matches = snap.val(); renderAll(); } });
+    dbRef.child('players').on('value', snap => { if (snap.val()) { state.players = snap.val(); } });
 
   } catch(err) {
     console.error("Firebase Connection Error:", err);
@@ -245,11 +245,11 @@ function switchTab(tab) {
   state.activeTab = tab;
   $$('.tab-panel').forEach(p => p.classList.remove('active'));
   
-  const tabMap = { finance: 'panelFinance', settlements: 'panelSettlements', standings: 'panelStandings' };
+  const tabMap = { finance: 'panelFinance', wallets: 'panelWallets', settlements: 'panelSettlements' };
   $(`#${tabMap[tab]}`)?.classList.add('active');
 
   $$('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
-  const btnMap = { finance: 'bnFinance', settlements: 'bnSettlements', standings: 'bnStandings' };
+  const btnMap = { finance: 'bnFinance', wallets: 'bnWallets', settlements: 'bnSettlements' };
   $(`#${btnMap[tab]}`)?.classList.add('active');
 
   renderAll();
@@ -339,16 +339,26 @@ function getMemberPaidAmount(memberId) {
 }
 
 // ═══════════════════════════════════════════════════
-//  TAB 1: FINANCE HQ RENDERING & DASHBOARD
+//  PAGE 1: OVERALL STANDINGS, LOBBIES (ADD & EDIT) & GRAPH
 // ═══════════════════════════════════════════════════
 function renderFinanceTab() {
+  // 1. Overall Standing Hero Stats
+  renderStandingsStats();
+
+  // 2. Render Matches / Lobbies List (With Add & Edit buttons on Page 1)
+  renderLobbiesList();
+
+  // 3. Render Performance Graph on Page 1
+  renderFinancialChart();
+}
+
+// ═══════════════════════════════════════════════════
+//  PAGE 2: MONEY & WALLET DISTRIBUTION
+// ═══════════════════════════════════════════════════
+function renderWalletsTab() {
   const stats = calculateCurrentWeekStats();
 
-  // Hero Section 1: Render Overall Standing Metrics & Table
-  renderStandingsStats();
-  renderOverallStandingTable();
-
-  // Section 2: Current Week Stat Cards
+  // 1. Current Week Stat Cards
   if ($('#weekNetResult')) {
     $('#weekNetResult').textContent = `${stats.net >= 0 ? '+' : '-'}${formatMoney(stats.net)}`;
     $('#weekNetResult').className = `stat-value orbitron ${stats.net >= 0 ? 'won-color' : 'lost-color'}`;
@@ -362,42 +372,11 @@ function renderFinanceTab() {
   if ($('#weekIncome')) $('#weekIncome').textContent = formatMoney(stats.income);
   if ($('#weekExpenses')) $('#weekExpenses').textContent = formatMoney(stats.expenses);
 
-  // Section 3: 5-Member Team Wallet Table
+  // 2. 5-Member Team Wallet Table
   renderWalletTable();
 
-  // Section 4: Weekly Performance Graph
-  renderFinancialChart();
-
-  // Section 5: Current Week Transactions List
+  // 3. Current Week Financial Transactions Log
   renderTransactionsList(stats.currentTxList);
-}
-
-function renderOverallStandingTable() {
-  const tbody = $('#overallStandingTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  state.members.forEach(m => {
-    const earned = state.memberWallets[m.id] || 0;
-    const inits = m.name.substring(0, 2).toUpperCase();
-
-    tbody.innerHTML += `
-      <tr>
-        <td>
-          <div class="member-cell">
-            <div class="member-avatar-chip" style="background:${m.color}">${inits}</div>
-            <div>
-              <div>${m.name}</div>
-              <div class="member-role-badge">${m.role}</div>
-            </div>
-          </div>
-        </td>
-        <td><span class="share-badge">20%</span></td>
-        <td class="text-right"><span class="wallet-val">${formatMoney(earned)}</span></td>
-      </tr>
-    `;
-  });
-  lucide.createIcons();
 }
 
 function renderStandingsStats() {
@@ -508,12 +487,12 @@ function renderTransactionsList(currentTxList) {
 function setTxFilterTab(tab) {
   state.txFilterTab = tab;
   $$('[data-txfilter]').forEach(t => t.classList.toggle('active', t.dataset.txfilter === tab));
-  renderFinanceTab();
+  renderWalletsTab();
 }
 
 function filterTransactions() {
   state.txSearchText = $('#txSearchInput').value;
-  renderFinanceTab();
+  renderWalletsTab();
 }
 
 // ═══════════════════════════════════════════════════
@@ -578,7 +557,7 @@ function deleteTransaction(id) {
 }
 
 // ═══════════════════════════════════════════════════
-//  TAB 2: SETTLEMENTS & PAYMENTS RENDERING
+//  PAGE 3: SETTLEMENTS & PAYMENTS RENDERING
 // ═══════════════════════════════════════════════════
 function renderSettlementsTab() {
   const stats = calculateCurrentWeekStats();
@@ -896,7 +875,7 @@ function renderFinancialChart() {
   const weeks = [...state.weeklySettlements].reverse().map(s => s.netResult);
   weeks.push(stats.net);
 
-  if (weeks.length < 2 && state.transactions.length === 0) {
+  if (weeks.length < 2 && state.transactions.length === 0 && state.matches.length === 0) {
     svg.style.display = 'none'; placeholder.style.display = 'flex'; return;
   }
   svg.style.display = 'block'; placeholder.style.display = 'none';
@@ -943,12 +922,9 @@ function renderFinancialChart() {
 }
 
 // ═══════════════════════════════════════════════════
-//  TAB 3: PRESERVED OVERALL STANDINGS & MATCHES (REQ 19)
+//  PAGE 1: LOBBIES MANAGEMENT & REGISTRY (ADD & EDIT)
 // ═══════════════════════════════════════════════════
-function renderStandingsTab() {
-  renderStandingsStats();
-
-  // Render Matches List
+function renderLobbiesList() {
   const list = $('#matchRegistryList'), empty = $('#emptyMatchState');
   if (!list) return;
   list.innerHTML = '';
@@ -984,6 +960,12 @@ function renderStandingsTab() {
             <span class="lobby-net-profit ${netMatch >= 0 ? 'profit-text' : 'loss-text'}">${netMatch >= 0 ? '+' : ''}${formatMoney(netMatch)}</span>
             <span class="lobby-gross">Entry: ${formatMoney(buyIn)}</span>
           </div>
+          ${state.isAdmin ? `
+            <div class="lobby-actions">
+              <button class="action-btn edit-btn" onclick="openEditLobbyModal('${m.id}')" title="Edit Lobby"><i data-lucide="edit-3"></i></button>
+              <button class="action-btn delete-btn" onclick="deleteLobby('${m.id}')" title="Delete Lobby"><i data-lucide="trash-2"></i></button>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -993,23 +975,56 @@ function renderStandingsTab() {
 
 function filterMatches() {
   state.matchSearchText = $('#matchSearchInput')?.value || '';
-  renderStandingsTab();
+  renderLobbiesList();
 }
 
 function openAddLobbyModal() {
   if (!state.isAdmin) return;
   $('#lobbyForm').reset();
   if ($('#editingMatchId')) $('#editingMatchId').value = '';
+  if ($('#lobbyModalTitle')) $('#lobbyModalTitle').textContent = 'Log New Match Lobby';
   $('#lobbyDate').value = getTodayString();
   $('#lobbyModal').classList.add('active');
   toggleOutcomeFields(); calculateNetForm();
+  lucide.createIcons();
 }
+
+function openEditLobbyModal(matchId) {
+  if (!state.isAdmin) return;
+  const match = state.matches.find(m => m.id === matchId);
+  if (!match) return;
+
+  $('#lobbyForm').reset();
+  if ($('#editingMatchId')) $('#editingMatchId').value = matchId;
+  if ($('#lobbyModalTitle')) $('#lobbyModalTitle').textContent = 'Edit Match Lobby';
+
+  $('#lobbyDate').value = match.date || getTodayString();
+  $('#lobbyTime').value = match.time || '12:00 PM';
+  $('#lobbyMap').value = match.map || '';
+  $('#lobbyPrice').value = match.price || 0;
+
+  if (match.outcome === 'win') {
+    $('#outcomeWin').checked = true;
+    $('#moneyWon').value = match.wonAmount || 0;
+  } else {
+    $('#outcomeLoss').checked = true;
+    $('#moneyLost').value = match.lostAmount || 0;
+  }
+
+  toggleOutcomeFields();
+  calculateNetForm();
+  $('#lobbyModal').classList.add('active');
+  lucide.createIcons();
+}
+
 function closeLobbyModal() { $('#lobbyModal').classList.remove('active'); }
+
 function toggleOutcomeFields() {
   const isWin = $('#outcomeWin').checked;
   $('#moneyWonGroup').style.display = isWin ? 'block' : 'none';
   $('#moneyLostGroup').style.display = isWin ? 'none' : 'block';
 }
+
 function calculateNetForm() {
   const p = parseFloat($('#lobbyPrice').value) || 0;
   const isWin = $('#outcomeWin').checked;
@@ -1020,25 +1035,53 @@ function calculateNetForm() {
     el.className = `preview-value orbitron ${net > 0 ? 'positive' : net < 0 ? 'negative' : ''}`;
   }
 }
+
 function saveLobby(e) {
   e.preventDefault();
   if (!state.isAdmin) return;
+
   const isWin = $('#outcomeWin').checked;
   const p = parseFloat($('#lobbyPrice').value) || 0;
-  const entry = {
-    id: 'm_' + Date.now(),
-    timestamp: Date.now(),
+  const editingId = $('#editingMatchId').value;
+
+  const matchData = {
     date: $('#lobbyDate').value,
     time: $('#lobbyTime').value,
     map: $('#lobbyMap').value.trim(),
     price: p,
     outcome: isWin ? 'win' : 'loss',
-    wonAmount: isWin ? (parseFloat($('#moneyWon').value)||0) : 0,
-    lostAmount: !isWin ? (parseFloat($('#moneyLost').value)||0) : p
+    wonAmount: isWin ? (parseFloat($('#moneyWon').value) || 0) : 0,
+    lostAmount: !isWin ? (parseFloat($('#moneyLost').value) || 0) : p
   };
-  state.matches = [entry, ...state.matches];
-  cloudSave('matches', state.matches, 'Match Logged!', () => { closeLobbyModal(); renderStandingsTab(); });
+
+  if (editingId) {
+    const idx = state.matches.findIndex(m => m.id === editingId);
+    if (idx !== -1) {
+      state.matches[idx] = { ...state.matches[idx], ...matchData };
+    }
+  } else {
+    const newEntry = {
+      id: 'm_' + Date.now(),
+      timestamp: Date.now(),
+      ...matchData
+    };
+    state.matches = [newEntry, ...state.matches];
+  }
+
+  cloudSave('matches', state.matches, editingId ? 'Lobby Updated!' : 'Lobby Logged!', () => {
+    closeLobbyModal();
+    renderAll();
+  });
 }
+
+function deleteLobby(matchId) {
+  if (!state.isAdmin || !confirm('Delete this lobby record?')) return;
+  state.matches = state.matches.filter(m => m.id !== matchId);
+  cloudSave('matches', state.matches, 'Lobby Deleted', () => {
+    renderAll();
+  });
+}
+
 function openPlayerProfile(id) {
   const p = state.players.find(x => x.id === id);
   if (!p) return;
