@@ -74,22 +74,21 @@
     <main class="tab-panels" id="mainContent">
 
       <!-- ══════════════════════════════════════════════════
-           TAB 1: FINANCE HQ & MAIN DASHBOARD
+           TAB 1: PAGE 1 — OVERALL STANDINGS, LOBBIES (ADD & EDIT) & GRAPH
            ══════════════════════════════════════════════════ -->
       <div class="tab-panel active" id="panelFinance">
 
-        <!-- ════════ 1. OVERALL STANDING (HERO SECTION) ════════ -->
+        <!-- 1. OVERALL STANDING (HERO STATS) -->
         <section class="glass-card hero-standings-section">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="trophy" class="cyan-icon"></i>
               <h2>OVERALL STANDING</h2>
             </div>
-            <span class="brand-version">TEAM HERO OVERVIEW</span>
+            <span class="brand-version">TEAM MATCH OVERVIEW</span>
           </div>
 
           <div class="standings-content-wrap">
-            <!-- Overall Stats Summary Cards -->
             <div class="stats-row">
               <div class="stat-card glass-card">
                 <div class="stat-header">
@@ -124,27 +123,67 @@
                 </div>
               </div>
             </div>
-
-            <!-- Overall Standing Table (Member | Share | Wallet) -->
-            <div class="wallet-table-container mt-3">
-              <table class="wallet-table">
-                <thead>
-                  <tr>
-                    <th>Member</th>
-                    <th>Share</th>
-                    <th class="text-right">Wallet Balance</th>
-                  </tr>
-                </thead>
-                <tbody id="overallStandingTableBody">
-                  <!-- Populated dynamically via JS -->
-                </tbody>
-              </table>
-            </div>
           </div>
         </section>
 
 
-        <!-- ════════ 2. CURRENT WEEK FINANCIAL RESULT ════════ -->
+        <!-- 2. LOBBY MANAGEMENT & MATCH DISPLAY (ADD & EDIT ON FIRST PAGE) -->
+        <section class="history-section glass-card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="swords" class="cyan-icon"></i>
+              <h2>MATCH LOBBIES (ADD & EDIT)</h2>
+            </div>
+            <div class="history-actions">
+              <button id="addLobbyBtn" class="btn btn-primary btn-sm disabled" onclick="openAddLobbyModal()" disabled>
+                <i data-lucide="plus"></i><span>+ Add Lobby</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="history-filters">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="matchSearchInput" placeholder="Search matches, maps..." oninput="filterMatches()">
+            </div>
+          </div>
+
+          <!-- Lobby Cards List (With Edit & Delete Action Buttons) -->
+          <div class="lobby-list" id="matchRegistryList"></div>
+          
+          <div id="emptyMatchState" class="empty-list-state">
+            <i data-lucide="folder-open"></i>
+            <p>No historical match records found.</p>
+          </div>
+        </section>
+
+
+        <!-- 3. PERFORMANCE GRAPH ON FIRST PAGE -->
+        <section class="chart-section glass-card" data-tilt data-tilt-max="1" data-tilt-perspective="1000">
+          <div class="card-header">
+            <div class="card-header-title">
+              <i data-lucide="activity" class="cyan-icon"></i>
+              <h2>PERFORMANCE GRAPH</h2>
+            </div>
+          </div>
+          <div class="chart-container" id="chartContainer">
+            <svg id="trendChart" width="100%" height="100%" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+            <div id="chartPlaceholder" class="chart-placeholder">
+              <i data-lucide="line-chart"></i>
+              <p>Add match lobbies to view performance trendline</p>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /panelFinance -->
+
+
+      <!-- ══════════════════════════════════════════════════
+           TAB 2: PAGE 2 — MONEY & WALLET DISTRIBUTION
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelWallets">
+
+        <!-- 1. CURRENT WEEK FINANCIAL RESULT -->
         <section class="section-container">
           <div class="section-title-wrap mb-2">
             <i data-lucide="calendar" class="cyan-icon"></i>
@@ -210,12 +249,12 @@
         </section>
 
 
-        <!-- ════════ 3. WALLET SUMMARY & PAYMENTS ════════ -->
+        <!-- 2. 5-MEMBER MONEY & WALLET DISTRIBUTION TABLE -->
         <section class="glass-card wallet-section">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="wallet" class="cyan-icon"></i>
-              <h2>WALLET SUMMARY & PAYMENTS</h2>
+              <h2>MONEY & WALLET DISTRIBUTION</h2>
             </div>
             <div class="header-action-btns">
               <button class="btn btn-ghost btn-sm disabled" id="editMembersBtn" onclick="openEditMembersModal()" disabled>
@@ -248,30 +287,12 @@
         </section>
 
 
-        <!-- ════════ 4. WEEKLY PERFORMANCE GRAPH ════════ -->
-        <section class="chart-section glass-card" data-tilt data-tilt-max="1" data-tilt-perspective="1000">
-          <div class="card-header">
-            <div class="card-header-title">
-              <i data-lucide="activity" class="cyan-icon"></i>
-              <h2>WEEKLY PERFORMANCE GRAPH</h2>
-            </div>
-          </div>
-          <div class="chart-container" id="chartContainer">
-            <svg id="trendChart" width="100%" height="100%" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
-            <div id="chartPlaceholder" class="chart-placeholder">
-              <i data-lucide="line-chart"></i>
-              <p>Add transactions or settle weeks to view financial chart</p>
-            </div>
-          </div>
-        </section>
-
-
-        <!-- ════════ 5. TRANSACTION HISTORY ════════ -->
+        <!-- 3. FINANCIAL TRANSACTIONS LOG -->
         <section class="history-section glass-card">
           <div class="card-header">
             <div class="card-header-title">
               <i data-lucide="file-text" class="cyan-icon"></i>
-              <h2>TRANSACTION & FINANCIAL HISTORY</h2>
+              <h2>FINANCIAL TRANSACTIONS LOG</h2>
             </div>
             <div class="history-actions">
               <button id="addTxBtn" class="btn btn-primary btn-sm disabled" onclick="openAddTxModal()" disabled>
@@ -295,21 +316,19 @@
             </div>
           </div>
 
-          <!-- Transaction Items List -->
           <div class="lobby-list" id="txList"></div>
           
           <div id="emptyTxState" class="empty-list-state">
             <i data-lucide="receipt"></i>
             <p>No transactions recorded for this week.</p>
-            <span class="hint-text">Unlock Admin Mode to record tournament winnings, lobby entry, etc.</span>
           </div>
         </section>
 
-      </div><!-- /panelFinance -->
+      </div><!-- /panelWallets -->
 
 
       <!-- ══════════════════════════════════════════════════
-           TAB 2: SETTLEMENTS & PAYMENTS
+           TAB 3: PAGE 3 — SETTLEMENTS & PAYMENT HISTORY
            ══════════════════════════════════════════════════ -->
       <div class="tab-panel" id="panelSettlements">
 
@@ -383,44 +402,6 @@
 
       </div><!-- /panelSettlements -->
 
-
-      <!-- ══════════════════════════════════════════════════
-           TAB 3: PRESERVED MATCH REGISTRY (REQ 19)
-           ══════════════════════════════════════════════════ -->
-      <div class="tab-panel" id="panelStandings">
-
-        <!-- Match Registry & Logger -->
-        <section class="history-section glass-card">
-          <div class="card-header">
-            <div class="card-header-title">
-              <i data-lucide="list" class="cyan-icon"></i>
-              <h2>Match Registry & Preserved Lobbies</h2>
-            </div>
-            <div class="history-actions">
-              <button id="addLobbyBtn" class="btn btn-primary btn-sm disabled" onclick="openAddLobbyModal()" disabled>
-                <i data-lucide="plus"></i><span>Log Match</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="history-filters">
-            <div class="search-box">
-              <i data-lucide="search"></i>
-              <input type="text" id="matchSearchInput" placeholder="Search matches, maps..." oninput="filterMatches()">
-            </div>
-          </div>
-
-          <!-- Lobby Cards List -->
-          <div class="lobby-list" id="matchRegistryList"></div>
-          
-          <div id="emptyMatchState" class="empty-list-state">
-            <i data-lucide="folder-open"></i>
-            <p>No historical match records found.</p>
-          </div>
-        </section>
-
-      </div><!-- /panelStandings -->
-
     </main>
 
     <!-- ════════ STATUS BAR ════════ -->
@@ -432,16 +413,16 @@
     <!-- ════════ BOTTOM NAV (3 TABS) ════════ -->
     <nav class="bottom-nav" id="bottomNav">
       <button class="bottom-nav-btn active" id="bnFinance" onclick="switchTab('finance')">
+        <i data-lucide="trophy"></i>
+        <span>Lobbies & Standings</span>
+      </button>
+      <button class="bottom-nav-btn" id="bnWallets" onclick="switchTab('wallets')">
         <i data-lucide="wallet"></i>
-        <span>Finance HQ</span>
+        <span>Money & Wallets</span>
       </button>
       <button class="bottom-nav-btn" id="bnSettlements" onclick="switchTab('settlements')">
         <i data-lucide="calendar-check"></i>
         <span>Settlements</span>
-      </button>
-      <button class="bottom-nav-btn" id="bnStandings" onclick="switchTab('standings')">
-        <i data-lucide="trophy"></i>
-        <span>Standings</span>
       </button>
     </nav>
 
