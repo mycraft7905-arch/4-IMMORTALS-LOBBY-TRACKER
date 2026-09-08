@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>4 IMMORTALS – Weekly Profit & Wallet Tracker V3.5</title>
   <meta name="description" content="Esports Team Weekly Profit, Loss Recovery, Settlement & Wallet Management System">
-  <meta name="theme-color" content="#05070a">
+  <meta name="theme-color" content="#04060a">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,14 +90,14 @@
 
           <div class="standings-content-wrap">
             <div class="stats-row">
-              <div class="stat-card glass-card">
+              <div class="stat-card glass-card hero-stat">
                 <div class="stat-header">
                   <span class="stat-title">HISTORICAL MATCH PROFIT</span>
                   <div class="stat-icon-wrapper profit-color"><i data-lucide="trophy"></i></div>
                 </div>
-                <div class="stat-value orbitron" id="standingsTotalProfit">₹0.00</div>
+                <div class="stat-value orbitron profit-glow" id="standingsTotalProfit">₹0.00</div>
                 <div class="stat-footer">
-                  <span class="stat-subtext">Match History Balance</span>
+                  <span class="stat-subtext">Cumulative Match History Balance</span>
                 </div>
               </div>
 
@@ -321,6 +321,7 @@
           <div id="emptyTxState" class="empty-list-state">
             <i data-lucide="receipt"></i>
             <p>No transactions recorded for this week.</p>
+            <span class="hint-text">Unlock Admin Mode to record tournament winnings, lobby entry, etc.</span>
           </div>
         </section>
 
@@ -670,7 +671,7 @@
     </div>
   </div>
 
-  <!-- Log Match Modal (PRESERVED) -->
+  <!-- Log Match Modal -->
   <div class="modal-overlay" id="lobbyModal">
     <div class="modal-sheet glass-card">
       <div class="modal-handle"></div>
@@ -696,16 +697,6 @@
         <div class="form-group mb-3">
           <label for="lobbyMap"><i data-lucide="map-pin"></i> Map / Mode</label>
           <input type="text" id="lobbyMap" placeholder="e.g. Ascent, Erangel, Ranked">
-        </div>
-
-        <div class="form-group mb-3">
-          <label><i data-lucide="users"></i> Match Lineup</label>
-          <div class="lineup-selector" id="lineupSelector"></div>
-        </div>
-
-        <div class="form-group mb-3" id="mistakesContainer" style="display: none;">
-          <label><i data-lucide="alert-circle"></i> Player Notes / Mistakes</label>
-          <div id="mistakesList" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
         </div>
 
         <div class="form-row">
@@ -751,34 +742,6 @@
 
         <button type="submit" class="btn btn-primary w-full mt-2"><i data-lucide="save"></i> Commit Match</button>
       </form>
-    </div>
-  </div>
-
-  <!-- Player Profile Modal (PRESERVED) -->
-  <div class="modal-overlay" id="playerProfileModal">
-    <div class="modal-sheet glass-card profile-modal">
-      <div class="modal-handle"></div>
-      <button class="modal-close" onclick="closePlayerProfileModal()"><i data-lucide="x"></i></button>
-
-      <div class="profile-header">
-        <div class="profile-avatar" id="profileAvatar">OP</div>
-        <h2 id="profileName">Operator</h2>
-      </div>
-
-      <div class="profile-stats-grid">
-        <div class="stat-card glass-card">
-          <span class="stat-title">WIN RATE</span>
-          <span class="stat-value orbitron" id="profileWinRate">0%</span>
-          <span class="stat-subtext" id="profileWL">0W / 0L</span>
-        </div>
-        <div class="stat-card glass-card">
-          <span class="stat-title">MATCHES</span>
-          <span class="stat-value orbitron" id="profileMatches">0</span>
-          <span class="stat-subtext" id="profileProfit">₹0.00</span>
-        </div>
-      </div>
-
-      <div id="profileAdminActions"></div>
     </div>
   </div>
 
