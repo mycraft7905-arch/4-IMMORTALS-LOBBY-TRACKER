@@ -19,7 +19,7 @@ let state = {
   weeklySettlements: [], // [{ weekId, weekLabel, startDate, endDate, totalIncome, totalExpenses, netResult, previousLossToRecover, lossRecoveredThisWeek, remainingLossToRecover, distributableProfit, amountPerMember, walletsSnapshot, closedAt, status: 'closed' }]
   lossToRecover: 0,
 
-  // PRESERVED Legacy Match Registry (Requirement 19)
+  // PRESERVED Legacy Match Registry
   matches: [],
   players: [],
 
@@ -57,7 +57,7 @@ function getTodayString() {
 
 function getWeekRange(dateInput) {
   const d = dateInput ? new Date(dateInput) : getISTNow();
-  const day = d.getDay(); // 0 is Sunday, 1 is Monday...
+  const day = d.getDay();
   const diffToMonday = (day === 0 ? -6 : 1 - day);
   
   const monday = new Date(d);
@@ -201,18 +201,20 @@ function setSyncStatus(status, text) {
   }
 }
 
-function cloudSave(path, data, successMsg, localFallback) {
+function cloudSave(path, data, successMsg, callback) {
+  saveLocalState();
   if (dbRef && state.isAdmin) {
     dbRef.child(path).set(data).then(() => {
       if (successMsg) showToast(successMsg, 'success');
-      saveLocalState();
-    }).catch(() => {
-      saveLocalState();
-      if (localFallback) localFallback();
+      if (typeof callback === 'function') callback();
+    }).catch((err) => {
+      console.error("Cloud Save Error:", err);
+      if (successMsg) showToast(successMsg + ' (Saved Locally)', 'info');
+      if (typeof callback === 'function') callback();
     });
   } else {
-    saveLocalState();
-    if (localFallback) localFallback();
+    if (successMsg) showToast(successMsg, 'success');
+    if (typeof callback === 'function') callback();
   }
 }
 
@@ -544,10 +546,9 @@ function saveTransaction(e) {
 
   state.transactions = [entry, ...state.transactions];
 
-  syncAllFinancialState("Transaction Saved!", () => {
-    closeTxModal();
-    renderAll();
-  });
+  closeTxModal();
+  renderAll();
+  syncAllFinancialState("Transaction Saved!");
 }
 
 function deleteTransaction(id) {
@@ -599,10 +600,7 @@ function renderSettlementsTab() {
     }
   }
 
-  // Render Closed Weeks List
   renderClosedWeeksHistory();
-
-  // Render Payment Log
   renderPaymentsLedger();
 }
 
@@ -631,7 +629,6 @@ function openSettleWeekModal() {
   if ($('#previewSettleRemainingLoss')) $('#previewSettleRemainingLoss').textContent = formatMoney(stats.remainingLoss);
   if ($('#previewSettleDistributable')) $('#previewSettleDistributable').textContent = formatMoney(stats.distributableProfit);
 
-  // Wallet Gains Preview List
   const list = $('#previewWalletGainsList');
   if (list) {
     list.innerHTML = '';
@@ -663,7 +660,6 @@ function confirmSettleWeek() {
     return;
   }
 
-  // 1. Lock current week's transactions
   state.transactions.forEach(t => {
     if (t.date >= stats.currentWeek.startStr && t.date <= stats.currentWeek.endStr) {
       t.weekId = stats.currentWeek.weekId;
@@ -671,17 +667,14 @@ function confirmSettleWeek() {
     }
   });
 
-  // 2. Update Loss To Recover
   state.lossToRecover = stats.remainingLoss;
 
-  // 3. Update Wallets (Wallets ONLY increase!)
   if (stats.perMemberGain > 0) {
     state.members.forEach(m => {
       state.memberWallets[m.id] = (state.memberWallets[m.id] || 0) + stats.perMemberGain;
     });
   }
 
-  // 4. Create Settlement Record
   const settlementRecord = {
     id: 'settle_' + Date.now(),
     weekId: stats.currentWeek.weekId,
@@ -703,10 +696,9 @@ function confirmSettleWeek() {
 
   state.weeklySettlements = [settlementRecord, ...state.weeklySettlements];
 
-  syncAllFinancialState("Week Settled & Locked!", () => {
-    closeSettleModal();
-    renderAll();
-  });
+  closeSettleModal();
+  renderAll();
+  syncAllFinancialState("Week Settled & Locked!");
 }
 
 function renderClosedWeeksHistory() {
@@ -798,10 +790,9 @@ function savePayment(e) {
 
   state.memberPayments = [paymentRecord, ...state.memberPayments];
 
-  syncAllFinancialState("Payment Recorded!", () => {
-    closePaymentModal();
-    renderAll();
-  });
+  closePaymentModal();
+  renderAll();
+  syncAllFinancialState("Payment Recorded!");
 }
 
 function renderPaymentsLedger() {
@@ -857,46 +848,82 @@ function saveMemberNames(e) {
   state.members[3].name = $('#nameInputP4').value.trim();
   state.members[4].name = $('#nameInputMgr').value.trim();
 
-  syncAllFinancialState("Call-Signs Updated", () => {
-    closeEditMembersModal();
-    renderAll();
-  });
+  closeEditMembersModal();
+  renderAll();
+  syncAllFinancialState("Call-Signs Updated");
 }
 
 // ═══════════════════════════════════════════════════
-//  GRAPH ENGINE
+//  GRAPH ENGINE (MATCH & FINANCIAL PERFORMANCE)
 // ═══════════════════════════════════════════════════
 function renderFinancialChart() {
   const svg = $('#trendChart'), placeholder = $('#chartPlaceholder');
   if (!svg || !placeholder) return;
 
-  // Build points: weekly settlements + current week
-  const stats = calculateCurrentWeekStats();
-  const weeks = [...state.weeklySettlements].reverse().map(s => s.netResult);
-  weeks.push(stats.net);
+  let points = [];
 
-  if (weeks.length < 2 && state.transactions.length === 0 && state.matches.length === 0) {
-    svg.style.display = 'none'; placeholder.style.display = 'flex'; return;
+  if (state.matches && state.matches.length > 0) {
+    // Mode A: Plot match-by-match performance curve (chronological order)
+    const sorted = [...state.matches].sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+    let cum = 0;
+    points.push({ val: 0, outcome: 'win', label: 'Start' });
+    
+    sorted.forEach((m, idx) => {
+      const isWin = m.outcome === 'win';
+      const buyIn = parseFloat(m.price) || 0;
+      const net = isWin ? ((parseFloat(m.wonAmount)||0) - buyIn) : -(parseFloat(m.lostAmount)||0);
+      cum += net;
+      points.push({ val: cum, outcome: net >= 0 ? 'win' : 'loss', label: `Match #${idx+1} (${m.map||'Lobby'})` });
+    });
+
+  } else if (state.transactions && state.transactions.length > 0) {
+    // Mode B: Plot transaction curve
+    const sorted = [...state.transactions].sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+    let cum = 0;
+    points.push({ val: 0, outcome: 'win', label: 'Start' });
+    sorted.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      const net = t.type === 'income' ? amt : -amt;
+      cum += net;
+      points.push({ val: cum, outcome: net >= 0 ? 'win' : 'loss', label: t.description });
+    });
+
+  } else if (state.weeklySettlements && state.weeklySettlements.length > 0) {
+    // Mode C: Plot weekly settlement curve
+    const stats = calculateCurrentWeekStats();
+    const weeks = [...state.weeklySettlements].reverse().map(s => s.netResult);
+    weeks.push(stats.net);
+    let cum = 0;
+    points.push({ val: 0, outcome: 'win', label: 'Start' });
+    weeks.forEach((wVal, idx) => {
+      cum += wVal;
+      points.push({ val: cum, outcome: wVal >= 0 ? 'win' : 'loss', label: `Week ${idx+1}` });
+    });
   }
-  svg.style.display = 'block'; placeholder.style.display = 'none';
 
-  let cum = 0;
-  const pts = weeks.map((wVal) => {
-    cum += wVal;
-    return { val: cum, outcome: wVal >= 0 ? 'win' : 'loss' };
-  });
+  // If no data points exist (points length <= 1), display placeholder
+  if (points.length <= 1) {
+    svg.style.display = 'none';
+    placeholder.style.display = 'flex';
+    return;
+  }
 
-  const W = 600, H = 200, padX = 20, padY = 20;
-  const gW = W - padX*2, gH = H - padY*2;
-  const vals = [...pts.map(p => p.val), 0];
-  let maxV = Math.max(...vals), minV = Math.min(...vals);
+  svg.style.display = 'block';
+  placeholder.style.display = 'none';
+
+  const W = 600, H = 200, padX = 25, padY = 25;
+  const gW = W - padX * 2, gH = H - padY * 2;
+  const vals = points.map(p => p.val);
+  let maxV = Math.max(...vals, 0), minV = Math.min(...vals, 0);
   if (maxV === minV) { maxV += 100; minV -= 100; }
   const range = maxV - minV;
 
-  const coords = pts.map((p,i) => ({
-    x: padX + (i / Math.max(1, pts.length-1)) * gW,
+  const coords = points.map((p, i) => ({
+    x: padX + (i / Math.max(1, points.length - 1)) * gW,
     y: padY + gH - ((p.val - minV) / range) * gH,
-    out: p.outcome
+    out: p.outcome,
+    val: p.val,
+    label: p.label
   }));
 
   const zeroY = padY + gH - ((0 - minV) / range) * gH;
@@ -910,14 +937,33 @@ function renderFinancialChart() {
     </defs>
   `;
 
-  if (zeroY >= padY && zeroY <= padY+gH) html += `<line class="chart-axis-line" x1="${padX}" y1="${zeroY}" x2="${W-padX}" y2="${zeroY}"/>`;
+  if (zeroY >= padY && zeroY <= padY + gH) {
+    html += `<line class="chart-axis-line" x1="${padX}" y1="${zeroY}" x2="${W - padX}" y2="${zeroY}"/>`;
+  }
 
-  let dPath = `M ${coords[0].x} ${coords[0].y}`, aPath = `M ${coords[0].x} ${zeroY} L ${coords[0].x} ${coords[0].y}`;
-  for (let i=1; i<coords.length; i++) { dPath += ` L ${coords[i].x} ${coords[i].y}`; aPath += ` L ${coords[i].x} ${coords[i].y}`; }
-  aPath += ` L ${coords[coords.length-1].x} ${zeroY} Z`;
+  let dPath = `M ${coords[0].x} ${coords[0].y}`;
+  let aPath = `M ${coords[0].x} ${zeroY} L ${coords[0].x} ${coords[0].y}`;
+
+  for (let i = 1; i < coords.length; i++) {
+    dPath += ` L ${coords[i].x} ${coords[i].y}`;
+    aPath += ` L ${coords[i].x} ${coords[i].y}`;
+  }
+  aPath += ` L ${coords[coords.length - 1].x} ${zeroY} Z`;
 
   html += `<path class="chart-area" d="${aPath}"/><path class="chart-line" d="${dPath}"/>`;
-  coords.forEach(p => { html += `<circle class="chart-node ${p.out === 'win' ? 'node-win' : 'node-loss'}" cx="${p.x}" cy="${p.y}" r="4"/>`; });
+
+  coords.forEach((p, idx) => {
+    if (idx === 0) return;
+    const formattedVal = `${p.val >= 0 ? '+' : ''}₹${Math.abs(p.val).toLocaleString('en-IN')}`;
+    html += `
+      <g class="chart-node-group">
+        <circle class="chart-node ${p.out === 'win' ? 'node-win' : 'node-loss'}" cx="${p.x}" cy="${p.y}" r="4">
+          <title>${p.label}: ${formattedVal}</title>
+        </circle>
+      </g>
+    `;
+  });
+
   svg.innerHTML = html;
 }
 
@@ -1068,18 +1114,22 @@ function saveLobby(e) {
     state.matches = [newEntry, ...state.matches];
   }
 
-  cloudSave('matches', state.matches, editingId ? 'Lobby Updated!' : 'Lobby Logged!', () => {
-    closeLobbyModal();
-    renderAll();
-  });
+  // 1. Close modal popup IMMEDIATELY
+  closeLobbyModal();
+  
+  // 2. Re-render UI and Graph IMMEDIATELY
+  renderAll();
+
+  // 3. Persist to Firebase & LocalStorage
+  cloudSave('matches', state.matches, editingId ? 'Lobby Updated!' : 'Lobby Logged!');
 }
 
 function deleteLobby(matchId) {
   if (!state.isAdmin || !confirm('Delete this lobby record?')) return;
   state.matches = state.matches.filter(m => m.id !== matchId);
-  cloudSave('matches', state.matches, 'Lobby Deleted', () => {
-    renderAll();
-  });
+  closeLobbyModal();
+  renderAll();
+  cloudSave('matches', state.matches, 'Lobby Deleted');
 }
 
 function openPlayerProfile(id) {
