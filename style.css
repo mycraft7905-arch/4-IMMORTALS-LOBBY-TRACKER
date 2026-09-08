@@ -162,6 +162,25 @@ body {
 .filter-tab.active { background: var(--cyan-bg); color: var(--cyan); border: 1px solid rgba(0,242,254,0.3); }
 
 .lobby-list { display: flex; flex-direction: column; max-height: 450px; overflow-y: auto; }
+.lobby-card { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--card-border); gap: 1rem; }
+.lobby-card-left { display: flex; align-items: center; gap: 0.85rem; flex: 1; }
+.lobby-card-right { display: flex; align-items: center; gap: 0.75rem; }
+.lobby-actions { display: flex; align-items: center; gap: 0.4rem; }
+.lobby-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+.lobby-time-tag { font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem; }
+.lobby-time-tag i { width: 12px; height: 12px; }
+.lobby-tags-row { display: flex; align-items: center; gap: 0.4rem; }
+.match-tag { font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.45rem; border-radius: 6px; }
+.tag-win { background: var(--win-bg); color: var(--win); border: 1px solid rgba(16,185,129,0.3); }
+.tag-loss { background: var(--loss-bg); color: var(--loss); border: 1px solid rgba(244,63,94,0.3); }
+.tag-map { background: rgba(0,242,254,0.08); color: var(--cyan); border: 1px solid rgba(0,242,254,0.2); display: inline-flex; align-items: center; gap: 0.25rem; }
+.tag-map i { width: 10px; height: 10px; }
+.lobby-pricing { display: flex; flex-direction: column; align-items: flex-end; }
+.lobby-net-profit { font-family: var(--font-mono); font-weight: 900; font-size: 1rem; }
+.profit-text { color: var(--win); }
+.loss-text { color: var(--loss); }
+.lobby-gross { font-size: 0.68rem; color: var(--text-muted); }
+
 .tx-card { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--card-border); gap: 1rem; }
 .tx-left { display: flex; align-items: center; gap: 0.85rem; flex: 1; }
 .badge-income { width: 38px; height: 38px; border-radius: 10px; background: var(--win-bg); color: var(--win); border: 1px solid rgba(16,185,129,0.3); display: flex; align-items: center; justify-content: center; }
